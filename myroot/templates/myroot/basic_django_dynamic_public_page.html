@@ -1,0 +1,47 @@
+{% extends "myroot/layout_home.html" %}
+{% load static %}
+{% load humanize %}
+
+{% block extra_styles_head %}{% endblock %}
+
+{% block page_sub_title %}
+<div class="jumbotron">
+    <div class="container">
+        <h1 class="display-3">Django Basic Dynamic Public Page</h1>
+        <p>
+            This is the dynamic public page as an example of how to fetch the database table row and load it accordingly.
+        </p>
+        <p>
+            <a class="btn btn-primary btn-lg" href="https://pinoylearnpython.com/basic-django-crud-using-ajax-json-and-jquery-monolithic-architecture/" role="button">Learn more »</a>
+            <a class="btn btn-secondary btn-lg" href="https://dev.pinoylearnpython.com/django-basic-crud-list/" role="button">Back to Django Manage Table Rows »</a>
+        </p>
+    </div>
+</div>
+{% endblock %}
+
+{% block content %}
+    <div class="container">
+        <div class="row">
+            <div class="col-md-12 order-md-1">
+                {% if db_data %}
+                    {% for d in db_data %}
+                        <h2 class="display-4 text-bold mt-0">{{ d.full_name }}</h2>
+                        <p class="text-gray-soft lead">
+                            <b>SUBJECT:</b> {{ d.subject }} <br/>
+                            <b>EMAIL:</b> {{ d.email }} <br/>
+                            <b>SUBMITTED:</b> {{ d.submitted|naturaltime }}
+                        </p>
+                        <p class="text-gray-soft lead">
+                            <b>Long Content:</b> <br/>
+                            {{ d.message|safe }}
+                        </p>
+                    {% endfor %}
+                {% else %}
+                    <p>Nothing to display table row.</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+{% endblock %}
+
+{% block scripts %}{% endblock %}

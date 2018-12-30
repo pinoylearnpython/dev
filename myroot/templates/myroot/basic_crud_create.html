@@ -1,0 +1,145 @@
+{% extends "myroot/layout_home.html" %}
+{% load static %}
+
+{% block extra_styles_head %}
+<link rel="stylesheet" href="{% static 'summernote/summernote-bs4.css' %}">
+{% endblock %}
+
+{% block page_sub_title %}
+<div class="jumbotron">
+    <div class="container">
+        <h1 class="display-3">{{ title }}</h1>
+        <p>
+            Welcome to Django Basic CRUD which is to CREATE or INSERT a new row to MySQL Database table name <b>dev_contact_us</b>.
+            Submit any sample data to test the Django Forms and how exactly it behaves.
+        </p>
+        <p>
+            <a class="btn btn-primary btn-lg" href="https://pinoylearnpython.com/basic-django-crud-using-ajax-json-and-jquery-monolithic-architecture/" role="button">Learn more »</a>
+            <a class="btn btn-secondary btn-lg" href="https://dev.pinoylearnpython.com/django-basic-crud-list/" role="button">Back to Django Manage Table Rows »</a>
+        </p>
+    </div>
+</div>
+{% endblock %}
+
+{% block content %}
+    <div class="container">
+        <div class="row">
+            <div class="col-md-12 order-md-1">
+
+                <form id="formContactUs" class="" method="POST">
+                    {% csrf_token %}
+
+                    <div class="form-label-group">
+                        {{ form.full_name }}
+                        <label for="id_full_name">Full Name</label>
+                    </div>
+
+                    <div class="form-label-group">
+                        {{ form.email }}
+                        <label for="id_email">Email</label>
+                    </div>
+
+                    <div class="form-label-group">
+                        {{ form.subject }}
+                        <label for="id_subject">Subject</label>
+                    </div>
+
+                    <div class="form-label-group">
+                        {{ form.message }}
+                    </div>
+                </form>
+
+                <div class="">
+                    <button class="btn btn-lg btn-primary btn-block" onclick="saveForm();" id="btnContactUs">Submit your Inquiry</button>
+                </div>
+
+            </div>
+        </div>
+    </div>
+{% endblock %}
+
+{% block scripts %}
+<script src="{% static 'assets/js/common/common.js' %}" defer></script>
+<script src="{% static 'summernote/summernote-bs4.min.js' %}" defer></script>
+<script src="{% static 'sweetalert/sweetalert.js' %}" defer></script>
+
+<script defer>
+    var BASE_URL = "{{ BASE_URL }}";
+    var COMMON_ASSETS_URL = "{% static 'assets/images/' %}";
+
+    function saveForm()
+    {
+        //Get the form instance
+        var $form = $("#formContactUs");
+        id_full_name = $("#id_full_name").val();
+        id_email = $("#id_email").val();
+        id_subject = $("#id_subject").val();
+        id_message = $("#id_message").val();
+
+        if (id_full_name === undefined || id_full_name === null || id_full_name ===""){
+            swal("Full Name is Required!", "Please enter your full name", "error");
+            $("#id_full_name").focus();
+            return false;
+        }
+
+        if (id_email === undefined || id_email === null || id_email ===""){
+            swal("Email is Required!", "Please enter your email", "error");
+            $("#id_email").focus();
+            return false;
+        }
+
+        if (id_subject === undefined || id_subject === null || id_subject ===""){
+            swal("Subject is Required!", "Please enter your subject", "error");
+            $("#id_subject").focus();
+            return false;
+        }
+
+        if (id_message === undefined || id_message === null || id_message ===""){
+            swal("Message is Required!", "Please enter your message", "error");
+            $("#id_message").focus();
+            return false;
+        }
+
+        $.ajax({
+            method: "POST",
+            url: BASE_URL+'django-basic-crud-create/',
+            data: $form.serialize(),
+            cache: false,
+            dataType: "json",
+            beforeSend: function(){
+                //Start displaying button's working animation
+                var loadingText = '<i class="fa fa-circle-o-notch fa-spin"></i> working...';
+                if ($("#btnContactUs").html() !== loadingText) {
+                    $("#btnContactUs").data('original-text', $("#btnContactUs").html());
+                    $("#btnContactUs").html(loadingText);
+                }
+            },
+            success: function(jResults)
+            {
+                $("#btnContactUs").html($("#btnContactUs").data('original-text')); //stop animation and switch back to original text
+
+                if(jResults.alert_type =='success'){
+                    swal(jResults.alert_title, jResults.alert_msg, jResults.alert_type);
+                    $form[0].reset(); // reset form data
+                    $("#id_message").summernote("reset");
+                    $("#id_full_name").focus();
+                }
+                else {
+                    var strErr = jResults.alert_msg + '';
+                    strErr = strErr.split(",").pop();
+                    swal(jResults.alert_title, strErr, jResults.alert_type);
+                }
+            }
+        });
+    }
+
+    $(document).ready(function()
+    {
+        $('#id_message').summernote({
+            placeholder: 'Type your message here.',
+            tabsize: 2,
+            height: 300
+        });
+    });
+</script>
+{% endblock %}

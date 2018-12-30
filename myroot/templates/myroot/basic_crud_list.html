@@ -1,0 +1,258 @@
+{% extends "myroot/layout_home.html" %}
+{% load static %}
+{% load humanize %}
+{% load tz %}
+
+{% block extra_styles_head %}
+<link rel="stylesheet" href="{% static 'adminlte3/plugins/daterangepicker/daterangepicker-bs3.css' %}">
+<link rel="stylesheet" href="https://cdn.datatables.net/1.10.16/css/dataTables.bootstrap4.min.css">
+<link rel="stylesheet" href="https://cdn.datatables.net/buttons/1.5.1/css/buttons.bootstrap4.min.css">
+<style>
+    th.dt-center, td.dt-center { text-align: center; }
+</style>
+{% endblock %}
+
+{% block page_sub_title %}
+<div class="jumbotron">
+    <div class="container">
+        <h1 class="display-3">{{ title }}</h1>
+        <p>{{ meta_desc }}</p>
+        <p><a class="btn btn-primary btn-lg" href="https://pinoylearnpython.com/basic-django-crud-using-ajax-json-and-jquery-monolithic-architecture/" role="button">Learn more »</a></p>
+    </div>
+</div>
+{% endblock %}
+
+{% block content %}
+    <div class="container">
+        <div class="row">
+            <div class="col-md-12 order-md-1">
+                <div class="card-body p-0">
+                    <div class="row">
+                        <div class="col-4 d-none d-sm-block">
+                            <div id="dataTableExportButtons" class="mt-3"></div>
+                        </div>
+
+                        <div class="col-6 d-none d-sm-block">
+                            <div class="form-group mb-0 pl-2 mt-3 float-right">
+                                <div class="input-group">
+                                    <button type="button" class="btn btn-default" id="daterange-btn">
+                                        <span><i class="fa fa-calendar"></i> Filter by date range</span>
+                                        <i class="fa fa-caret-down"></i>
+                                    </button>
+                                    <div class="input-group-append">
+                                        <button type="button" class="btn btn-secondary SearchDataDR"><i class="fa fa-search"></i></button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="col-2 d-none d-sm-block">
+                            <div class="form-group pl-2 mb-0 mt-3 pr-2 float-right">
+                                <div class="input-group" id="divSearchFile">
+                                    <input type="text" class="form-control" id="fsearch" name="fsearch" placeholder="Search Records">
+                                    <div class="input-group-append">
+                                        <button id="btnSearchFile" class="btn btn-secondary SearchDataText">
+                                            <i class="fa fa-search"></i>
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <table id="tblData" class="table table-bordered table-striped">
+                            <thead>
+                                <tr>
+                                    <th>Full Name</th>
+                                    <th class="must_hide">Subject</th>
+                                    <th class="must_hide">Email</th>
+                                    <th class="must_hide">Submitted</th>
+                                    <th></th>
+                                    <th></th>
+                                    <th></th>
+                                    <th></th>
+                                </tr>
+                            </thead>
+
+                            <tbody id="tbData">
+                                {% if db_data %}
+                                    {% for d in db_data %}
+                                        <tr id="tr{{ d.id }}">
+                                            <td>{{ d.full_name }}</td>
+                                            <td class="must_hide">{{ d.subject|truncatechars:100 }}</td>
+                                            <td>{{ d.email }}</td>
+                                            <td class="must_hide">{{ d.submitted|localtime|timesince }}</td>
+
+                                            <td>
+                                                <a href="{% url 'basic_crud_create' %}">
+                                                    <i class="fa fa-plus"></i>
+                                                </a>
+                                            </td>
+
+                                            <td>
+                                                <a href="{% url 'change_basic_crud' d.id %}">
+                                                    <i class="fa fa-edit"></i>
+                                                </a>
+                                            </td>
+
+                                            <td>
+                                                <a href="javascript:void(0);" onclick="confirmUserDeleteAction(this);" row-id="{{ d.id }}">
+                                                    <i class="far fa-trash-alt"></i>
+                                                </a>
+                                            </td>
+
+                                            <td>
+                                                <a href="{% url 'basic_crud_dyn_pub_page' d.full_name|slugify d.id %}" target="_blank">
+                                                    <i class="fa fa-globe"></i>
+                                                </a>
+                                            </td>
+
+                                            <td>
+                                                {{ d.id }}
+                                            </td>
+                                        </tr>
+                                    {% endfor %}
+                                {% endif %}
+                            </tbody>
+                        </table>
+
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+{% endblock %}
+
+{% block scripts %}
+<script src="{% static 'assets/js/common/common.js' %}" defer></script>
+<script src="{% static 'sweetalert/sweetalert.js' %}" defer></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.10.2/moment.min.js"></script>
+<script defer src="{% static 'adminlte3/plugins/daterangepicker/daterangepicker.js' %}"></script>
+
+<!-- dataTable objects -->
+<script defer src="https://cdn.datatables.net/1.10.16/js/jquery.dataTables.min.js"></script>
+<script defer src="https://cdn.datatables.net/1.10.16/js/dataTables.bootstrap4.min.js"></script>
+<script defer src="https://cdn.datatables.net/buttons/1.5.1/js/dataTables.buttons.min.js"></script>
+<script defer src="https://cdn.datatables.net/buttons/1.5.1/js/buttons.bootstrap4.min.js"></script>
+<script defer src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.1.3/jszip.min.js"></script>
+<script defer src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.1.32/pdfmake.min.js"></script>
+<script defer src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.1.32/vfs_fonts.js"></script>
+<script defer src="https://cdn.datatables.net/buttons/1.5.1/js/buttons.html5.min.js"></script>
+<script defer src="https://cdn.datatables.net/buttons/1.5.1/js/buttons.print.min.js"></script>
+<script defer src="https://cdn.datatables.net/buttons/1.5.1/js/buttons.colVis.min.js"></script>
+
+<script defer>
+
+    var mStartDate = moment().format('YYYY-MM-DD');
+    var mEndDate = moment().format('YYYY-MM-DD');
+
+    var BASE_URL = "{{ BASE_URL }}";
+    var COMMON_ASSETS_URL = "{% static 'assets/images/' %}";
+    var THIS_OBJ = '';
+
+    $(function () {
+
+        var table = $('#tblData').DataTable({
+            "paging": true,
+            "lengthChange": false,
+            "searching": false,
+            "ordering": true,
+            "info": true,
+            "autoWidth": false,
+            "columnDefs": [
+                { "orderable": false, "targets": [4, 5, 6, 7], "className": 'dt-center' },
+                { "visible": false, "targets": 8 }
+            ],
+            "order": [[ 8, "desc" ]],
+            "buttons": [ 'copy', 'excel', 'pdf', 'colvis' ]
+        });
+
+        table.buttons().container()
+        .appendTo('#dataTableExportButtons');
+
+        //Date range as a button
+		$('#daterange-btn').daterangepicker(
+			{
+				ranges   : {
+				  	'Today'       : [moment(), moment()],
+				  	'Yesterday'   : [moment().subtract(1, 'days'), moment().subtract(1, 'days')],
+				  	'Last 7 Days' : [moment().subtract(6, 'days'), moment()],
+				  	'Last 30 Days': [moment().subtract(29, 'days'), moment()],
+				  	'This Month'  : [moment().startOf('month'), moment().endOf('month')],
+				  	'Last Month'  : [moment().subtract(1, 'month').startOf('month'), moment().subtract(1, 'month').endOf('month')]
+				},
+				startDate: moment(),
+				endDate  : moment()
+			},
+		  	function (start, end)
+		  	{
+				mStartDate = start.format('YYYY-MM-DD');
+				mEndDate = end.format('YYYY-MM-DD');
+				$('#daterange-btn span').html(start.format('MMMM D, YYYY') + ' - ' + end.format('MMMM D, YYYY'))
+		  	}
+		)
+    });
+
+    function confirmUserDeleteAction(pThis)
+    {
+        THIS_OBJ = pThis;
+        var csrfmiddlewaretoken = Cookies.get('csrftoken');
+        var row_id = $(THIS_OBJ).attr("row-id");
+        console.log("csrfmiddlewaretoken: " + csrfmiddlewaretoken);
+
+        //confirm user action
+        swal({
+            title: "Are you sure?",
+            text: "Once deleted, you will not be able to recover this data!",
+            icon: "warning",
+            buttons: true,
+            dangerMode: true,
+        })
+        .then((willDelete) => {
+            if (willDelete) {
+                delRow();
+            }
+        });
+    }
+
+    function delRow()
+    {
+        var csrfmiddlewaretoken = Cookies.get('csrftoken');
+        var row_id = $(THIS_OBJ).attr("row-id");
+
+        if (csrfmiddlewaretoken === undefined || csrfmiddlewaretoken === null || csrfmiddlewaretoken === ""){
+            swal("CSRF Token is Missing!", "Please refresh this page and try again.", "error");
+            return false;
+        }
+
+        $.ajax({
+            method: "POST",
+            url: BASE_URL+'django_basic_crud_delete/',
+            data: "csrfmiddlewaretoken="+ csrfmiddlewaretoken +"&row_id="+row_id,
+            cache: false,
+            dataType: "json",
+            success: function(jResults)
+            {
+                if(jResults.alert_type =='success'){
+                    swal(jResults.alert_title, jResults.alert_msg, jResults.alert_type);
+                    var table = $('#tblData').DataTable();
+                    table.row("#tr"+row_id).remove().draw( false );
+                }
+                else {
+                    var strErr = jResults.alert_msg + '';
+                    strErr = strErr.split(",").pop();
+                    swal(jResults.alert_title, strErr, jResults.alert_type);
+                }
+            }
+        });
+    }
+
+    $(document).ready(function()
+    {
+        //Must hide table columns when small screens
+        if ($(window).width() < 700){
+            $('.must_hide').hide();
+        }
+
+    });
+</script>
+{% endblock %}

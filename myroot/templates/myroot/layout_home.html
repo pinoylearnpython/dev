@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <title>{{ title|slice:":60" }}</title>
+    <link rel="canonical" href="{{ BASE_URL|slice:":-1" }}{{ request.get_full_path }}">
+    <meta name="viewport" content="width=device-width,minimum-scale=1,initial-scale=1">
+    <meta name="description" content="{{ meta_desc|slice:":160" }}" />
+    {% load static %}
+    <link rel="icon" type="image/jpg" href="{% static 'assets/images/favicon.ico' %}">
+    <link rel="stylesheet" href="{% static 'bootstrap4/css/bootstrap.min.css' %}">
+    <link rel="stylesheet" href="{% static 'fontawesome5/css/fontawesome-all.min.css' %}">
+    <link rel="stylesheet" href="{% static 'assets/css/common.css' %}">
+    <style>
+        .hero {min-height: 100px; position: relative; z-index: 10; text-align: center; padding-top: 10px;}
+    </style>
+    {% block extra_styles_head %}{% endblock %}
+</head>
+
+{% block body_styles %}
+<body class="bg-light">
+
+    {% block page_sub_title %}{% endblock %}
+
+    <main role="main">
+        {% block content %}{% endblock %}
+        <script src="{% static 'assets/js/common/jquery.min.js' %}"></script>
+        <script src="{% static 'js-cookie/js.cookie.js' %}" defer></script>
+        <script src="{% static 'bootstrap4/js/popper.min.js' %}" defer></script>
+        <script src="{% static 'bootstrap4/js/bootstrap.min.js' %}" defer></script>
+        <script src="{% static 'bootstrap4/js/holder.min.js' %}" defer></script>
+
+        <!-- Global site tag (gtag.js) - Google Analytics -->
+        <script async src="https://www.googletagmanager.com/gtag/js?id=UA-126199598-1"></script>
+        <script>
+          window.dataLayer = window.dataLayer || [];
+          function gtag(){dataLayer.push(arguments);}
+          gtag('js', new Date());
+
+          gtag('config', 'UA-126199598-1');
+        </script>
+        {% block scripts %}{% endblock %}
+
+        {% block footer %}
+            {% include 'myroot/footer_home.html' %}
+        {% endblock %}
+    </main>
+
+    {% block extra_styles_bottom %}{% endblock %}
+</body>
+{% endblock %}
+</html>
