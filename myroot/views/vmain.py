@@ -3,10 +3,17 @@ from django.shortcuts import render
 from django.http import JsonResponse
 from django.utils import timezone
 from django.http import Http404
+from django.utils.text import slugify
+from django.db.models import Q
+import json
+import pytz
+from datetime import datetime, timedelta
+from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
+from django.shortcuts import redirect
 
 # Call myroot properties
 from myroot.forms.fmain import Basic_CRUD_Create_Form
-from myroot.views.vfunctions import dict_alert_msg
+from myroot.views.vfunctions import dict_alert_msg, convert_to_local_datetime
 from myroot.models import ContactUs
 
 
@@ -16,7 +23,8 @@ def hello_world_view(request):
         return render(request, 'myroot/hello_world.html',
                       {'title': 'Hello World!',
                        'meta_desc': "The complete step-by-step guide in displaying Hello World using Django Template with NGINX guide to set up a new website from scratch.",
-                       'BASE_URL': settings.BASE_URL})
+                       'BASE_URL': settings.BASE_URL,
+                       'mtest': settings.STATIC_ROOT})
 
 
 def basic_crud_create_view(request):
@@ -171,3 +179,154 @@ def basic_crud_update_row_view(request, id):
             data = dict_alert_msg('False', 'Oops, Error', msg, 'error')
 
         return JsonResponse(data)
+
+
+def basic_search_text_view(request):
+    """Renders the basic search text."""
+    if request.method == "POST":
+        fsearch = request.POST.get('fsearch')
+
+        # Filter data by using __icontains built-in Django function
+        data_lists = ContactUs.objects.filter(
+                        Q(is_deleted=False) &
+                        (Q(full_name__icontains=fsearch) |
+                        Q(email__icontains=fsearch) |
+                        Q(subject__icontains=fsearch) |
+                        Q(message__icontains=fsearch))).order_by('-id')[:50]
+
+        fh_data = dict()
+        fh_list = []
+
+        for fh in data_lists:
+            url = settings.BASE_URL + slugify(fh.full_name) + "-" + str(fh.id)
+            trun_subject = fh.subject[:100] + '...'
+
+            # Convert UTC datetime from db to user's local datetime.
+            submitted_date = convert_to_local_datetime(fh.submitted)
+
+            edit_url = settings.BASE_URL + "basic_crud/" + str(fh.id) + "/change/"
+
+            fh_list.append(
+                    {'full_name': (fh.full_name),
+                     'subject': trun_subject,
+                     'email': fh.email,
+                     'submitted': submitted_date,
+                     'id': fh.id,
+                     'url': url,
+                     'edit_url': edit_url
+                     })
+
+        fh_data = fh_list
+        json_data = json.dumps(fh_data)
+        return JsonResponse(json_data, safe=False)
+
+
+def basic_search_dr_view(request):
+    """Renders the basic search by date and time."""
+    if request.method == "POST":
+
+        # Get the date range values from the user input
+        mStartDate = request.POST.get('mStartDate')
+        mEndDate = request.POST.get('mEndDate')
+
+        # Format date
+        date_format = '%Y-%m-%d'
+
+        unaware_start_date = datetime.strptime(mStartDate, date_format)
+        aware_start_date = pytz.utc.localize(unaware_start_date)
+
+        unaware_end_date = datetime.strptime(mEndDate, date_format
+                                             ) + timedelta(days=1)
+        aware_end_date = pytz.utc.localize(unaware_end_date)
+
+        # Display data, using __range from Django's built-in functionality
+        data_lists = ContactUs.objects.filter(
+                            is_deleted=False,
+                            submitted__range=(aware_start_date,
+                                                 aware_end_date)
+                            ).order_by('-id')[:50]
+
+        fh_data = dict()
+        fh_list = []
+
+        for fh in data_lists:
+            url = settings.BASE_URL + slugify(fh.full_name) + "-" + str(fh.id)
+            trun_subject = fh.subject[:100] + '...'
+
+            # Convert UTC datetime from db to user's local datetime.
+            submitted_date = convert_to_local_datetime(fh.submitted)
+
+            edit_url = settings.BASE_URL + "basic_crud/" + str(fh.id) + "/change/"
+
+            fh_list.append(
+                    {'full_name': (fh.full_name),
+                     'subject': trun_subject,
+                     'email': fh.email,
+                     'submitted': submitted_date,
+                     'id': fh.id,
+                     'url': url,
+                     'edit_url': edit_url
+                     })
+
+        fh_data = fh_list
+        json_data = json.dumps(fh_data)
+        return JsonResponse(json_data, safe=False)
+
+
+def search_view(request):
+    """
+    Renders the native Django search with form post submission
+    with basic SEO compliance.
+    """
+    if request.method == "GET":
+        fsearch = request.GET.get('q')
+
+        if fsearch and len(fsearch) >= settings.MIN_CHARS_SEARCH:
+
+            # Filter data by using __icontains built-in Django function
+            data_lists = ContactUs.objects.filter(
+                            Q(is_deleted=False) &
+                            (Q(full_name__icontains=fsearch) |
+                            Q(email__icontains=fsearch) |
+                            Q(subject__icontains=fsearch) |
+                            Q(message__icontains=fsearch))).order_by('-id')[:50]
+
+            paginator = Paginator(data_lists, 50)  # Show 50 rows per page
+            page = request.GET.get('page', 1)
+
+            try:
+                data_pages = paginator.page(page)
+            except PageNotAnInteger:
+                data_pages = paginator.page(1)
+            except EmptyPage:
+                data_pages = paginator.page(paginator.num_pages)
+
+            # Get the index of the current page
+            index = data_pages.number - 1  # edited to something easier without index
+            max_index = len(paginator.page_range)
+            start_index = index - 5 if index >= 5 else 0
+            end_index = index + 5 if index <= max_index - 5 else max_index
+            page_range = list(paginator.page_range)[start_index:end_index]
+            totRows = "{:,}".format(paginator.count)
+
+            return render(request, 'myroot/search.html',
+                          {
+                              'title': 'Search Results for: ' + str(fsearch),
+                              'meta_desc': 'These are the list of search results based on your search text criteria.',
+                              'data_pages': data_pages,
+                              'page_range': page_range,
+                              'totRows': totRows,
+                              'q': fsearch
+                           })
+        else:
+            return redirect('emptysearch')
+
+
+def emptysearch_view(request):
+    """Renders the empty search page."""
+    if request.method == 'GET':
+        return render(request, 'myroot/empty_search.html',
+                      {'title': "Oops! Invalid Search.",
+                       'meta_desc': """Either you forget to enter your search text criteria
+                       or at least key-in the minimum of 3 characters for the search operation
+                       to proceed. Thank You!"""})
