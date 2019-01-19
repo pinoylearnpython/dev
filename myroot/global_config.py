@@ -11,4 +11,6 @@ def global_settings(request):
         'SITE_YEAR_STARTED': settings.SITE_YEAR_STARTED,
         'SITE_URL_HOME': settings.SITE_URL_HOME,
         'SITE_SLOGAN': settings.SITE_SLOGAN,
+        'SITE_CONTACT_US': settings.SITE_CONTACT_US,
+        'MIN_CHARS_SEARCH': settings.MIN_CHARS_SEARCH,
     }
