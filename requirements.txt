@@ -2,3 +2,4 @@ Django
 mysqlclient
 channels
 redis-server
+timeago
