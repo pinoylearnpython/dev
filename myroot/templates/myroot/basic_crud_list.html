@@ -18,6 +18,28 @@
         <h1 class="display-3">{{ title }}</h1>
         <p>{{ meta_desc }}</p>
         <p><a class="btn btn-primary btn-lg" href="https://pinoylearnpython.com/basic-django-crud-using-ajax-json-and-jquery-monolithic-architecture/" role="button">Learn more »</a></p>
+
+        <section>
+            <div class="d-flex flex-column flex-md-row align-items-center p-1 px-md-4 mb-0">
+                <div class="container">
+                    <div class="row justify-content-center text-center section-intro">
+                        <div class="col-12 col-md-9 col-lg-8 mb-0">
+                            <p>Try the <a href="https://pinoylearnpython.com/basic-django-search-queries-with-pagination/" target="_blank">Native Django Search Form Submission for better SEO Method</a></p>
+                            <form id="formSearch" action="/search/" method="get" class="card p-2">
+                                <div class="input-group">
+                                    <input id="q" name="q" value="{{ q }}" type="text" class="form-control" placeholder="Search at least {{ MIN_CHARS_SEARCH }} minimum characters.">
+                                    <div class="input-group-append">
+                                        <button type="submit" class="btn btn-primary" id="btnSearch">Search</button>
+                                    </div>
+                                </div>
+                            </form>
+
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
     </div>
 </div>
 {% endblock %}
@@ -252,6 +274,121 @@
         if ($(window).width() < 700){
             $('.must_hide').hide();
         }
+
+        //Hit enter key from input search box
+		$('#fsearch').on("keypress", function(e) {
+	        if (e.keyCode == 13) {
+				$('button[id = btnSearchFile]').click();
+	            return false;
+	        }
+		});
+
+        //Search data by text
+		$('.SearchDataText').on("click",function()
+        {
+			//GET THE VALUE
+            var csrfmiddlewaretoken = Cookies.get('csrftoken');
+
+			$("#divSearchFile").find("input").serialize();
+	        fsearch = $("#fsearch").val().trim();
+
+            if (csrfmiddlewaretoken === undefined || csrfmiddlewaretoken === null || csrfmiddlewaretoken === ""){
+                swal("CSRF Token is Missing!", "Please refresh this page and try again.", "error");
+                return false;
+            }
+
+	        $.ajax
+			({
+				type: "POST",
+				url: BASE_URL+"basic_search_text/",
+
+				<!--INSERT PARAMETERS HERE-->
+				data: 'csrfmiddlewaretoken='+csrfmiddlewaretoken +'&fsearch='+fsearch,
+				cache: false,
+				dataType: "json",
+				success: function(jResults)
+				{
+                    $('#tbData').empty();
+                    var table = $('#tblData').DataTable();
+                    table.clear();
+
+                    var rowStatus = '';
+					var data = jQuery.parseJSON(jResults);
+					$.each(data, function(i, obj) {
+
+                        var add_row = `<a href="{% url 'basic_crud_create' %}"><i class="fa fa-plus"></i></a>`;
+                        var edit_row = `<a href="`+ obj.edit_url +`"><i class="fa fa-edit"></i></a>`;
+                        var del_row = `<a href="javascript:void(0);" onclick="confirmUserDeleteAction(this);" row-id="`+ obj.id +`"><i class="far fa-trash-alt"></i></a>`;
+                        var visit_link = `<a href="`+ obj.url +`" target="_blank"><i class="fa fa-globe"></i></a>`;
+
+                        table.row.add([
+                            obj.full_name,
+                            obj.subject,
+                            obj.email,
+                            obj.submitted,
+                            add_row,
+                            edit_row,
+                            del_row,
+                            visit_link,
+                            obj.id
+                        ]).node().id = 'tr'+obj.id;
+                        table.draw( false );
+			        });
+				}
+			});
+        });
+
+        //Search data by date range
+		$('.SearchDataDR').on("click",function()
+        {
+            //GET THE VALUE
+            var csrfmiddlewaretoken = Cookies.get('csrftoken');
+
+            if (csrfmiddlewaretoken === undefined || csrfmiddlewaretoken === null || csrfmiddlewaretoken === ""){
+                swal("CSRF Token is Missing!", "Please refresh this page and try again.", "error");
+                return false;
+            }
+
+	        $.ajax
+			({
+				type: "POST",
+				url: BASE_URL+"basic_search_dr/",
+
+				<!--INSERT PARAMETERS HERE-->
+				data: 'csrfmiddlewaretoken='+csrfmiddlewaretoken + '&mStartDate='+mStartDate + '&mEndDate='+mEndDate,
+				cache: false,
+				dataType: "json",
+				success: function(jResults)
+				{
+                    $('#tbData').empty();
+                    var table = $('#tblData').DataTable();
+                    table.clear();
+
+                    var rowStatus = '';
+					var data = jQuery.parseJSON(jResults);
+					$.each(data, function(i, obj) {
+
+                        var add_row = `<a href="{% url 'basic_crud_create' %}"><i class="fa fa-plus"></i></a>`;
+                        var edit_row = `<a href="`+ obj.edit_url +`"><i class="fa fa-edit"></i></a>`;
+                        var del_row = `<a href="javascript:void(0);" onclick="confirmUserDeleteAction(this);" row-id="`+ obj.id +`"><i class="far fa-trash-alt"></i></a>`;
+                        var visit_link = `<a href="`+ obj.url +`" target="_blank"><i class="fa fa-globe"></i></a>`;
+
+                        table.row.add([
+                            obj.full_name,
+                            obj.subject,
+                            obj.email,
+                            obj.submitted,
+                            add_row,
+                            edit_row,
+                            del_row,
+                            visit_link,
+                            obj.id
+                        ]).node().id = 'tr'+obj.id;
+                        table.draw( false );
+			        });
+				}
+			});
+        });
 
     });
 </script>

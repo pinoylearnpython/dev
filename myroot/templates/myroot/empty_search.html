@@ -1,0 +1,41 @@
+{% extends "myroot/layout_home.html" %}
+{% load static %}
+
+{% block schema_json %}{% endblock %}
+{% block extra_styles_head %}{% endblock %}
+
+{% block page_sub_title %}
+<div class="page-header px-3 py-3 pt-md-5 pb-md-4 mx-auto text-center">
+    <h1 class="display-4">Oops! Invalid Search.</h1>
+    <p class="lead">
+        Either you forget to enter your search text criteria or at least key-in the minimum of {{ MIN_CHARS_SEARCH }} characters for the search operation to proceed. Thank You!
+    </p>
+    <section>
+        <div class="d-flex flex-column flex-md-row align-items-center p-1 px-md-4 mb-0">
+            <div class="container">
+                <div class="row justify-content-center text-center section-intro">
+                    <div class="col-12 col-md-9 col-lg-8 mb-0">
+
+                        <form id="formSearch" action="/search/" method="get" class="card p-2">
+                            <div class="input-group">
+                                <input id="q" name="q" value="{{ q }}" type="text" class="form-control" placeholder="Search at least {{ MIN_CHARS_SEARCH }} minimum characters.">
+                                <div class="input-group-append">
+                                    <button type="submit" class="btn btn-primary" id="btnSearch">Search</button>
+                                </div>
+                            </div>
+                        </form>
+
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+    <p>
+        <a href="https://pinoylearnpython.com/basic-django-search-queries-with-pagination/" class="btn btn-primary my-2">Learn more »</a>
+        <a href="{{ SITE_CONTACT_US }}" class="btn btn-secondary my-2">Contact Us</a>
+    </p>
+</div>
+{% endblock %}
+
+{% block content %}{% endblock %}
+{% block scripts %}{% endblock %}

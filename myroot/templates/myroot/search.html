@@ -1,0 +1,94 @@
+{% extends "myroot/layout_home.html" %}
+{% load static %}
+{% load humanize %}
+
+{% block extra_styles_head %}{% endblock %}
+
+{% block page_sub_title %}
+<div class="jumbotron">
+    <div class="container">
+        <h1 class="display-3">Native Django Search Form Submission for better SEO (Search Engine Optimization) Method</h1>
+        <p>
+            This is the native Django form submission using post method to query records from the database with Django pagination.
+        </p>
+        <p>
+            <a class="btn btn-primary btn-lg" href="https://pinoylearnpython.com/basic-django-search-queries-with-pagination/" role="button">Learn more »</a>
+            <a class="btn btn-secondary btn-lg" href="https://dev.pinoylearnpython.com/django-basic-crud-list/" role="button">Back to Django Manage Table Rows »</a>
+        </p>
+
+        <section>
+            <div class="d-flex flex-column flex-md-row align-items-center p-1 px-md-4 mb-0">
+                <div class="container">
+                    <div class="row justify-content-center text-center section-intro">
+                        <div class="col-12 col-md-9 col-lg-8 mb-0">
+
+                            <form id="formSearch" action="/search/" method="get" class="card p-2">
+                                <div class="input-group">
+                                    <input id="q" name="q" value="{{ q }}" type="text" class="form-control" placeholder="Search records from dev_contact_us table">
+                                    <div class="input-group-append">
+                                        <button type="submit" class="btn btn-primary" id="btnSearch">Search</button>
+                                    </div>
+                                </div>
+                            </form>
+
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </div>
+</div>
+{% endblock %}
+
+{% block content %}
+    <div class="container">
+        <div class="row">
+            <div class="col-md-12 order-md-1">
+                <table class="table table-striped table-valign-middle">
+                    <tbody>
+                        {% if data_pages %}
+                            {% for s in data_pages %}
+                                <tr>
+                                    <td>
+                                        <a href="{% url 'basic_crud_dyn_pub_page' s.full_name|slugify s.id %}" target="_blank">{{ s.full_name }}</a><br>
+                                        {{ s.subject }}
+                                    </td>
+                                    <td>
+                                        <span class="d-flex flex-column text-right">
+                                            {{ s.submitted|naturaltime }}
+                                        </span>
+                                    </td>
+                                </tr>
+                            {% endfor %}
+                        {% endif %}
+                    </tbody>
+                </table>
+                {% if data_pages %}
+                    <nav aria-label="Page navigation mt-3" id="navPagination">
+                        <ul class="pagination justify-content-end">
+                            {% if data_pages.has_previous %}
+                                <li class="page-item"><a class="page-link" href="?q={{ q }}&page=1">First</a></li>
+                                <li class="page-item"><a class="page-link" href="?q={{ q }}&page={{ data_pages.previous_page_number }}">Previous</a></li>
+                            {% endif %}
+
+                            {% for pg in page_range %}
+                                {% if data_pages.number == pg %}
+                                    <li class="page-item active"><span class="page-link">{{ pg }}<span class="sr-only">(current)</span></span></li>
+                                {% else %}
+                                    <li class="page-item"><a class="page-link" href="?q={{ q }}&page={{ pg }}">{{ pg }}</a></li>
+                                {% endif %}
+                            {% endfor %}
+
+                            {% if data_pages.has_next %}
+                                <li class="page-item"><a class="page-link" href="?q={{ q }}&page={{ data_pages.next_page_number }}">Next</a></li>
+                                <li class="page-item"><a class="page-link" href="?q={{ q }}&page={{ data_pages.paginator.num_pages }}">Last</a></li>
+                            {% endif %}
+                        </ul>
+                    </nav>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+{% endblock %}
+
+{% block scripts %}{% endblock %}
