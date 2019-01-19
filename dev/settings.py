@@ -151,3 +151,7 @@ SITE_FULL_NAME = "Pinoy Learn Python"
 SITE_YEAR_STARTED = "2018"
 SITE_URL_HOME = "https://pinoylearnpython.com"
 SITE_SLOGAN = SITE_FULL_NAME + " - To Help Filipino Students to Learn Python!"
+SITE_CONTACT_US = "https://pinoylearnpython.com/get-in-touch-with-me/"
+
+# Minimum characters for search
+MIN_CHARS_SEARCH = 3

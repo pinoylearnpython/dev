@@ -43,4 +43,16 @@ urlpatterns = [
 
     path('basic_crud/<int:id>/change/', myroot.views.vmain.basic_crud_update_row_view,
          name='change_basic_crud'),
+
+    path('basic_search_text/', myroot.views.vmain.basic_search_text_view,
+         name='basic_search_text'),
+
+    path('basic_search_dr/', myroot.views.vmain.basic_search_dr_view,
+         name='basic_search_dr'),
+
+    path('search/', myroot.views.vmain.search_view,
+         name='search'),
+
+    path('emptysearch/', myroot.views.vmain.emptysearch_view,
+         name='emptysearch'),
 ]
