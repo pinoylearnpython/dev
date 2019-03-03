@@ -11,10 +11,26 @@ from datetime import datetime, timedelta
 from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
 from django.shortcuts import redirect
 
+# Django Auth System
+from django.contrib.auth.models import User
+from django.contrib.auth import authenticate, login, logout
+from django.contrib.auth.tokens import default_token_generator
+from django.contrib.sites.shortcuts import get_current_site
+from django.utils.http import urlsafe_base64_encode, urlsafe_base64_decode
+from django.utils.encoding import force_bytes
+from django.template.loader import render_to_string
+import requests
+
 # Call myroot properties
-from myroot.forms.fmain import Basic_CRUD_Create_Form
-from myroot.views.vfunctions import dict_alert_msg, convert_to_local_datetime
-from myroot.models import ContactUs
+from myroot.forms.fmain import (Basic_CRUD_Create_Form, SignUpForm,
+                                LoginAuthenticationForm, PasswordResetForm,
+                                PasswordResetConfirmForm)
+
+from myroot.views.vfunctions import (dict_alert_msg, convert_to_local_datetime,
+                                     is_email_valid, is_password_valid)
+
+from myroot.models import ContactUs, SiteConfig
+from myroot.tokens import account_activation_token
 
 
 def hello_world_view(request):
@@ -69,7 +85,7 @@ def basic_crud_list_view(request):
 
         db_data = ContactUs.objects.filter(
                 is_deleted=False
-                ).order_by('-id')[:50] # fetch the latest 50 rows
+                ).order_by('-id')[:50]  # fetch the latest 50 rows
 
         return render(request, 'myroot/basic_crud_list.html',
                       {
@@ -243,7 +259,7 @@ def basic_search_dr_view(request):
         data_lists = ContactUs.objects.filter(
                             is_deleted=False,
                             submitted__range=(aware_start_date,
-                                                 aware_end_date)
+                                              aware_end_date)
                             ).order_by('-id')[:50]
 
         fh_data = dict()
@@ -330,3 +346,415 @@ def emptysearch_view(request):
                        'meta_desc': """Either you forget to enter your search text criteria
                        or at least key-in the minimum of 3 characters for the search operation
                        to proceed. Thank You!"""})
+
+
+def register_view(request):
+    """Renders the register page."""
+    if request.method == 'GET':
+
+        # Get signup form to display
+        form = SignUpForm()
+        return render(request, 'myroot/registration/register.html',
+                      {'form': form,
+                       'title': "Register | " + settings.SITE_SHORT_NAME,
+                       'meta_desc': """A step-by-step guide on how to create a user registration form using Django 2.1+ with Python 3.7+""",
+                       })
+
+    data = dict()
+    if request.method == 'POST':
+        form = SignUpForm(request.POST)
+        username = request.POST.get('username')
+        email = request.POST.get('email')
+        password1 = request.POST.get('password1')
+        password2 = request.POST.get('password2')
+
+        is_pass_valid, msg, title = is_password_valid(password1, password2)
+
+        if not is_pass_valid:
+            # Return some json response back to user
+            data = dict_alert_msg('False', title, msg, 'error')
+
+        # Check if email exist in our users list
+        elif User.objects.filter(email=email):
+            # Return some json response back to user
+            msg = """A user with that email address already exist."""
+            data = dict_alert_msg('False', 'Invalid Email!', msg, 'error')
+
+        elif User.objects.filter(username=username):
+            # Return some json response back to user
+            msg = """Username already taken, please try another one."""
+            data = dict_alert_msg('False', 'Invalid Username!',
+                                  msg, 'error')
+
+        # To check prohibited username match with our list
+        elif SiteConfig.objects.filter(property_name=username):
+            # Return some json response back to user
+            msg = """A username you have entered is not allowed."""
+            data = dict_alert_msg('False', 'Prohibited Username!',
+                                  msg, 'error')
+
+        # To check if Prohibited email match with our list
+        elif SiteConfig.objects.filter(property_name=email):
+            # Return some json response back to user
+            msg = """The email you have entered is not allowed."""
+            data = dict_alert_msg('False', 'Prohibited Email!',
+                                  msg, 'error')
+
+        else:
+
+            ''' Begin reCAPTCHA validation '''
+            recaptcha_response = request.POST.get('g-recaptcha-response')
+            data = {
+                'secret': settings.GRECAP_SECRET_KEY,
+                'response': recaptcha_response
+            }
+            r = requests.post(settings.GRECAP_VERIFY_URL, data=data)
+            result = r.json()
+            ''' End reCAPTCHA validation '''
+
+            if result['success']:
+
+                # Validate email address if exist from an email server.
+                is_email_real = is_email_valid(email)
+
+                if is_email_real:
+
+                    # Proceed with the rest of registering new user
+                    user = form.save(commit=False)
+                    user.is_active = False
+                    user.save()  # Finally save the form data
+                    user.pk  # Get the latest id
+
+                    current_site = get_current_site(request)
+                    subject = 'Activate Your ' + \
+                        str(settings.SITE_SHORT_NAME) + ' Account'
+                    message = render_to_string(
+                        'myroot/account/account_activation_email.html',
+                        {
+                            'user': user,
+                            'domain': current_site.domain,
+                            'uid': urlsafe_base64_encode(force_bytes(user.pk)).decode(),
+                            'token': account_activation_token.make_token(user),
+                        })
+                    user.email_user(subject, message, settings.APP_EMAIL_FROM)
+
+                    # Return some json response back to user
+                    msg = """New user has been created successfully!"""
+                    data = dict_alert_msg('True', 'Awesome', msg, 'success')
+
+                else:
+
+                    # Return some json response back to user
+                    msg = """Invalid or non-existed email address."""
+                    data = dict_alert_msg('False', 'Oops, Invalid Email Address', msg, 'error')
+
+            else:
+
+                # Return some json response back to user
+                msg = """Invalid reCAPTCHA, please try again."""
+                data = dict_alert_msg('False', 'Oops, Error', msg, 'error')
+
+    return JsonResponse(data)
+
+
+def account_activation_sent(request):
+    """A page to be displayed after the signup form submitted successfully."""
+    return render(request, 'myroot/account/account_activation_sent.html',
+                  {'title': 'New ' + str(settings.SITE_SHORT_NAME) +
+                   ' Account Activation',
+                   'meta_desc': 'New account activation.'})
+
+
+def activate(request, uidb64, token):
+    """ Function to call for new user account activation process."""
+    try:
+        uid = urlsafe_base64_decode(uidb64).decode()
+        user = User.objects.get(pk=uid)
+    except (TypeError, ValueError, OverflowError, User.DoesNotExist):
+        user = None
+
+    if user is not None and account_activation_token.check_token(user, token):
+        user.is_active = True
+        user.save()
+
+        login(request, user)
+        return render(request,
+                      'myroot/account/account_activation_complete.html',
+                      {
+                          'title': 'New Account Activated Successfully',
+                          'meta_desc': 'New Account Activated Successfully'
+                      }
+                      )
+    else:
+        return render(request,
+                      'myroot/account/account_activation_invalid.html',
+                      {
+                          'title': 'Account Activation Failed',
+                          'meta_desc': 'Account Activation Failed'
+                      }
+                      )
+
+
+def login_view(request):
+    """Renders the login page."""
+    if request.user.is_authenticated:
+        # User has been Authenticated: redirect to the specified landing page instead
+        # and not to display the login page again until the user logout.
+        return redirect(settings.APP_USER_AUTH_RE_ACCESS_LOGIN_PAGE)
+    else:
+        if request.method == 'GET':
+            # Get login form to display
+            form = LoginAuthenticationForm()
+            return render(request, 'myroot/account/login.html',
+                          {'form': form, 'title': 'Log in',
+                           'meta_desc': settings.SITE_SHORT_NAME + """ Account.
+                           Sign in to access your account."""})
+
+    data = dict()
+    if request.method == 'POST':
+        form = LoginAuthenticationForm(request.POST)
+        username = request.POST.get('username', '').strip()
+        password = request.POST.get('password', '').strip()
+        chkKeepMe = request.POST.get('chkKeepMe')
+
+        if username and password:
+
+            ''' Begin reCAPTCHA validation '''
+            recaptcha_response = request.POST.get('g-recaptcha-response')
+            data = {
+                'secret': settings.GRECAP_SECRET_KEY,
+                'response': recaptcha_response
+            }
+            r = requests.post(settings.GRECAP_VERIFY_URL, data=data)
+            result = r.json()
+            ''' End reCAPTCHA validation '''
+
+            if result['success']:
+                # Check remember me checkbox option
+                if chkKeepMe == "true":
+                    request.session.set_expiry(2592000)  # 30 days
+                else:
+                    # session will expire on 12 hrs
+                    request.session.set_expiry(43200)
+
+                # Test username/password combination
+                user = authenticate(username=username, password=password)
+                # Found a match
+                if user is not None:
+
+                    # User is active
+                    if user.is_active:
+                        # Login Successfully Authenticated
+                        login(request, user)
+
+                        msg = """User has been successfully login."""
+                        data = dict_alert_msg('True', 'Login Successfully',
+                                              msg, 'success')
+
+                        data["base_url"] = settings.BASE_URL
+
+                        # Check /next/ url parameter
+                        next_url = request.GET.get('next')
+                        if next_url:
+                            # Strip off "/" at the first string position
+                            data["redirect_url"] = next_url[1:]
+                        else:
+                            data["redirect_url"] = settings.LOGIN_REDIRECT_URL
+
+                    else:
+
+                        # Account is not Active
+                        msg = """Sorry, your account is not active, please
+                        check your email inbox to verify your account."""
+                        data = dict_alert_msg('False', 'Account is not Active',
+                                              msg, 'error')
+                else:
+
+                    # Invalid username or password
+                    msg = """Please enter the correct username and password for your account.
+                    Note that both fields may be case-sensitive."""
+                    data = dict_alert_msg('False', 'Invalid Login', msg, 'error')
+
+            else:
+
+                # Return some json response back to user
+                msg = """Invalid reCAPTCHA, please try again."""
+                data = dict_alert_msg('False', 'Oops, Error', msg, 'error')
+
+            return JsonResponse(data)
+
+
+def logout_view(request):
+    """Renders the logout event."""
+    if request.method == 'GET':
+        logout(request)
+
+        # Redirect to a success page.
+        return redirect('/login/')
+
+
+def password_reset_view(request):
+    """Renders the password reset page."""
+    if request.method == 'GET':
+        # Get password reset form to display
+        form = PasswordResetForm()
+        return render(request, 'myroot/account/password_reset_form.html',
+                      {'form': form, 'title': 'Reset Password',
+                       'meta_desc': """We can help you to reset your password using your
+                       registered email linked to your account."""})
+
+    data = dict()
+    if request.method == 'POST':
+        form = PasswordResetForm(request.POST)
+
+        if form.is_valid():
+
+            ''' Begin reCAPTCHA validation '''
+            recaptcha_response = request.POST.get('g-recaptcha-response')
+            data = {
+                'secret': settings.GRECAP_SECRET_KEY,
+                'response': recaptcha_response
+            }
+            r = requests.post(settings.GRECAP_VERIFY_URL, data=data)
+            result = r.json()
+            ''' End reCAPTCHA validation '''
+
+            if result['success']:
+                # Check first if email existed in our users data
+                if User.objects.filter(email=form.cleaned_data.get("email")):
+                    # Setup email template
+                    opts = {
+                        'use_https': request.is_secure(),
+                        'token_generator': default_token_generator,
+                        'from_email': settings.APP_EMAIL_FROM,
+                        'email_template_name': 'myroot/account/password_reset_email.html',
+                        'subject_template_name': 'myroot/account/password_reset_subject.txt',
+                        'request': request
+                    }
+                    form.save(**opts)
+
+                    msg = """Password reset request sent successfully."""
+                    data = dict_alert_msg('True', 'Password Reset Sent!',
+                                          msg, 'success')
+                    data["redirect_url"] = 'password_reset_done'
+                    data["base_url"] = settings.BASE_URL
+
+                else:
+
+                    # Email submitted is not found in our users data
+                    msg = """Email is not registered, please try again."""
+                    data = dict_alert_msg('False', 'Email is Not Registered!',
+                                          msg, 'warning')
+            else:
+
+                # Return some json response back to user
+                msg = """Invalid reCAPTCHA, please try again."""
+                data = dict_alert_msg('False', 'Oops, Error', msg, 'error')
+
+        else:
+            # Extract form.errors
+            msg = None
+            msg = [(k, v[0]) for k, v in form.errors.items()]
+            data = dict_alert_msg('False', 'Oops, Error', msg, 'error')
+
+        return JsonResponse(data)
+
+
+def password_reset_done_view(request):
+    """Renders the password reset done page."""
+    if request.method == 'GET':
+        # Get password reset done page to display
+        return render(request, 'myroot/account/password_reset_done.html',
+                      {'title': 'Password Reset Sent',
+                       'meta_desc': """We've emailed you instructions for setting your password, if an account exists with the email you entered. You should receive them shortly.
+                       If you don't receive an email, please make sure you've entered the address you registered with, and check your spam folder."""})
+
+
+def password_reset_confirm_view(request, uidb64, token):
+    """Renders my own password change page."""
+    if request.method == 'GET':
+        # Get user info
+        current_user = request.user
+        formChangePassword = PasswordResetConfirmForm(current_user.username)
+
+        try:
+            uid = urlsafe_base64_decode(uidb64).decode()
+            user = User.objects.get(pk=uid)
+        except (TypeError, ValueError, OverflowError, User.DoesNotExist):
+            user = None
+
+        if user is not None and default_token_generator.check_token(user, token):
+            validlink = True
+        else:
+            validlink = False
+
+        return render(request, 'myroot/account/password_reset_confirm.html',
+                      {
+                          'title': 'Password Reset Confirm',
+                          'meta_desc': 'Password Reset Confirm.',
+                          'formChangePassword': formChangePassword,
+                          'validlink': validlink,
+                          'username': user
+                       })
+
+
+def reset_password_now_view(request):
+    """Custom Password Reset triggered from the AJAX post."""
+    data = dict()
+    if request.method == 'POST':
+        new_password1 = request.POST.get('new_password1')
+        new_password2 = request.POST.get('new_password2')
+        username = request.POST.get('username')
+
+        is_pass_valid, msg, title = is_password_valid(new_password1, new_password2)
+
+        if not is_pass_valid:
+            # Return some json response back to user
+            data = dict_alert_msg('False', title, msg, 'error')
+
+        else:
+
+            ''' Begin reCAPTCHA validation '''
+            recaptcha_response = request.POST.get('g-recaptcha-response')
+            data = {
+                'secret': settings.GRECAP_SECRET_KEY,
+                'response': recaptcha_response
+            }
+            r = requests.post(settings.GRECAP_VERIFY_URL, data=data)
+            result = r.json()
+            ''' End reCAPTCHA validation '''
+
+            if result['success']:
+                # Check first if email existed in our users data
+                if User.objects.filter(username=username):
+
+                    # Change the password now
+                    u = User.objects.get(username=username)
+                    u.set_password(new_password1)
+                    u.save()
+
+                    msg = """Your new password was successfully changed."""
+                    data = dict_alert_msg('True', 'Password Changed',
+                                          msg, 'success')
+                else:
+
+                    # The username submitted is not found in our users data
+                    msg = """Oops, username not found, please try again."""
+                    data = dict_alert_msg('False', 'Username Not Found!',
+                                          msg, 'error')
+            else:
+
+                # Return some json response back to user
+                msg = """Invalid reCAPTCHA, please try again."""
+                data = dict_alert_msg('False', 'Oops, Error', msg, 'error')
+
+        return JsonResponse(data)
+
+
+def password_reset_complete_view(request):
+    """Renders the password reset complete page."""
+    if request.method == 'GET':
+        # Get password reset done page to display
+        return render(request, 'myroot/account/password_reset_complete.html',
+                      {'title': 'Password Reset Complete',
+                       'meta_desc': """Your password has been set, you can login with your account with us now."""})
