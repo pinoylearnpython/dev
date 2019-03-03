@@ -1,0 +1,20 @@
+{% extends "myroot/layout_auth.html" %}
+{% load static %}
+
+{% block extra_styles_head %}
+<link rel="stylesheet" href="{% static 'assets/css/center.css' %}">
+{% endblock %}
+
+{% block content %}
+
+    <div class="py-1 text-center">
+        <img class="d-block mx-auto mb-2 rounded d-image" data-src="{{ APP_URL_TOP_LOGO }}" alt="Logo">
+        <h1 class="h3 mb-1 font-weight-normal">Account Activation Failed.</h1>
+        <p class="">
+            The confirmation link was invalid, possibly because it has already been used.
+            You can probably <a href="{% url 'register' %}">sign up</a> once again now.
+        </p>
+    </div>
+
+{% endblock %}
+{% block scripts %}{% endblock %}

@@ -1,0 +1,215 @@
+{% extends "myroot/layout_auth.html" %}
+{% load static %}
+
+{% block extra_styles_head %}
+<!-- START OF reCaptcha settings -->
+<script src="https://www.google.com/recaptcha/api.js?onload=onloadCallback&render=explicit" async defer></script>
+<script type="text/javascript" defer>
+    var onloadCallback = function(){
+        grecaptcha.render("gReCaptcha",{
+            "sitekey": "{{ GRECAP_SITE_KEY }}",
+            "badge": "inline",
+            "type": "image",
+            "size": "invisible",
+            "callback": onSubmit
+        });
+    };
+
+    var onSubmit = function(token){
+        saveForm();
+    }
+
+    function validate(event){
+        if (isRequiredFieldsPass()){
+            event.preventDefault();
+            grecaptcha.execute();
+        }
+    }
+</script>
+<!-- END OF reCaptcha settings -->
+{% endblock %}
+
+{% block content %}
+
+    <div class="col-md-5 order-md-2 mx-auto pt-5 pb-5">
+        <div class="card box-shadow">
+            <div class="card-body">
+                <div class="py-1 text-center">
+                    <img class="d-block mx-auto mb-2 rounded d-image" data-src="{{ APP_URL_TOP_LOGO }}" alt="Logo">
+                    <h1 class="h3 mb-1 font-weight-normal">Create your {{ APP_SHORTNAME }} account</h1>
+                    <p class="">Welcome to Django's create user form tutorial, you can test to submit any user information and see how the form respond.</p>
+                </div>
+
+                <form id="formSignUp" class="" method="POST">
+                    {% csrf_token %}
+
+                    <div class="form-label-group">
+                        {{ form.username }}
+                        <label for="id_username">User Name</label>
+                    </div>
+
+                    <div class="form-label-group">
+                        {{ form.email }}
+                        <label for="id_email">Email</label>
+                    </div>
+
+                    <div class="form-label-group">
+                        {{ form.password1 }}
+                        <label for="id_password1">Password</label>
+                    </div>
+
+                    <div class="form-label-group">
+                        {{ form.password2 }}
+                        <label for="id_password2">Confirm Password</label>
+                    </div>
+
+                    <!-- reCaptcha place holder-->
+                    <div id="gReCaptcha"></div>
+                </form>
+
+                <div class="">
+                    <button class="btn btn-lg btn-primary btn-block" onclick="saveForm();" id="btnSignUp">Sign up</button>
+
+                    <div class="mt-3 mb-1 text-center">
+                        <p>How this user creation form was built? <a href="https://pinoylearnpython.com/django-user-authentication-system-with-recaptcha-v3-jquery-and-ajax-method/" target="_blank">Learn more »</a>.<br/>
+                        Have an account?<a href="{% url 'login' %}"> Log in</a></p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+{% endblock %}
+
+{% block scripts %}
+<script src="{% static 'assets/js/common/common.js' %}" defer></script>
+<script src="{% static 'sweetalert/sweetalert.js' %}" defer></script>
+
+<script defer>
+
+    var BASE_URL = "{{ BASE_URL }}";
+    var COMMON_ASSETS_URL = "{% static 'assets/images/' %}";
+    var THIS_OBJ = '';
+
+    function isRequiredFieldsPass()
+    {
+        id_username = $("#id_username").val();
+        id_email = $("#id_email").val();
+        id_password1 = $("#id_password1").val();
+        id_password2 = $("#id_password2").val();
+
+        if (id_username === undefined || id_username === null || id_username ===""){
+            swal("Username is Required!", "Please enter your username", "error");
+            $("#id_username").focus();
+            return false;
+        }
+
+        if (id_email === undefined || id_email === null || id_email ===""){
+            swal("Email is Required!", "Please enter your email address", "error");
+            $("#id_email").focus();
+            return false;
+        }
+
+        if (id_password1 === undefined || id_password1 === null || id_password1 ===""){
+            swal("Password is Required!", "Please enter your password", "error");
+            $("#id_password1").focus();
+            return false;
+        }
+
+        if (id_password2 === undefined || id_password2 === null || id_password2 ===""){
+            swal("Confirm Password is Required!", "Please re-type your password", "error");
+            $("#id_password2").focus();
+            return false;
+        }
+
+        if (id_password1 !== id_password2){
+            swal("Password Not Match!", "The two password fields didn't match.", "error");
+            $("#id_password2").focus();
+            return false;
+        }
+
+        return true;
+    }
+
+    function saveForm()
+    {
+        //Get the form instance
+        var $form = $("#formSignUp");
+        id_username = $("#id_username").val();
+        id_email = $("#id_email").val();
+        id_password1 = $("#id_password1").val();
+        id_password2 = $("#id_password2").val();
+
+        if (id_username === undefined || id_username === null || id_username ===""){
+            swal("Username is Required!", "Please enter your username", "error");
+            $("#id_username").focus();
+            return false;
+        }
+
+        if (id_email === undefined || id_email === null || id_email ===""){
+            swal("Email is Required!", "Please enter your email address", "error");
+            $("#id_email").focus();
+            return false;
+        }
+
+        if (id_password1 === undefined || id_password1 === null || id_password1 ===""){
+            swal("Password is Required!", "Please enter your password", "error");
+            $("#id_password1").focus();
+            return false;
+        }
+
+        if (id_password2 === undefined || id_password2 === null || id_password2 ===""){
+            swal("Confirm Password is Required!", "Please re-type your password", "error");
+            $("#id_password2").focus();
+            return false;
+        }
+
+        if (id_password1 !== id_password2){
+            swal("Password Not Match!", "The two password fields didn't match.", "error");
+            $("#id_password2").focus();
+            return false;
+        }
+
+        $.ajax({
+            method: "POST",
+            url: BASE_URL+'register/',
+            data: $form.serialize(),
+            cache: false,
+            dataType: "json",
+            beforeSend: function(){
+                //Start displaying button's working animation
+                var loadingText = '<i class="fa fa-circle-o-notch fa-spin"></i> working...';
+                if ($("#btnSignUp").html() !== loadingText) {
+                    $("#btnSignUp").data('original-text', $("#btnSignUp").html());
+                    $("#btnSignUp").html(loadingText);
+                }
+            },
+            success: function(jResults)
+            {
+                // Reload reCaptcha
+                grecaptcha.reset();
+                myutils.btnReCaptcha("btnSignUp");
+
+                $("#btnSignUp").html($("#btnSignUp").data('original-text')); //stop animation and switch back to original text
+
+                if(jResults.alert_type =='success'){
+                    swal(jResults.alert_title, jResults.alert_msg, jResults.alert_type);
+                    location.assign(BASE_URL + "account_activation_sent");
+                }
+                else {
+                    var strErr = jResults.alert_msg + '';
+                    strErr = strErr.split(",").pop();
+                    swal(jResults.alert_title, strErr, jResults.alert_type);
+                }
+            }
+        });
+    }
+
+    $(document).ready(function()
+    {
+        // Reload reCaptcha
+        myutils.btnReCaptcha("btnSignUp");
+
+    });
+</script>
+{% endblock %}

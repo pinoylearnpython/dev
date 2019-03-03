@@ -1,0 +1,176 @@
+{% extends "myroot/layout_auth.html" %}
+{% load static %}
+
+{% block extra_styles_head %}
+<style>
+    body,html{height:100%}body{display:-ms-flexbox;display:-webkit-box;display:flex;-ms-flex-align:center;-ms-flex-pack:center;-webkit-box-align:center;align-items:center;-webkit-box-pack:center;justify-content:center;padding-top:40px;padding-bottom:40px}
+</style>
+<!-- START OF reCaptcha settings -->
+<script src="https://www.google.com/recaptcha/api.js?onload=onloadCallback&render=explicit" async defer></script>
+<script type="text/javascript" defer>
+    var onloadCallback = function(){
+        grecaptcha.render("gReCaptcha",{
+            "sitekey": "{{ GRECAP_SITE_KEY }}",
+            "badge": "inline",
+            "type": "image",
+            "size": "invisible",
+            "callback": onSubmit
+        });
+    };
+
+    var onSubmit = function(token){
+        saveForm();
+    }
+
+    function validate(event){
+        if (isRequiredFieldsPass()){
+            event.preventDefault();
+            grecaptcha.execute();
+        }
+    }
+</script>
+<!-- END OF reCaptcha settings -->
+{% endblock %}
+
+{% block content %}
+
+    <div class="col-md-5 order-md-2 mx-auto">
+        <div class="card box-shadow">
+            <div class="card-body">
+                <div class="py-1 text-center">
+                    <img class="d-block mx-auto mb-2 rounded d-image" data-src="{{ APP_URL_TOP_LOGO }}" alt="Logo">
+                    <h1 class="h3 mb-1 font-weight-normal">Welcome Back</h1>
+                    <p class="mb-0">This is the actual login demo, <a href="#" target="_blank">learn more »</a></p>
+                </div>
+
+                <form id="formLogin" class="" method="POST">
+                    {% csrf_token %}
+
+                    <div class="form-label-group mb-1">
+                        {{ form.username }}
+                        <label for="id_username">User Name</label>
+                    </div>
+
+                    <div class="form-label-group">
+                        {{ form.password }}
+                        <label for="id_password">Password</label>
+                    </div>
+
+                    <div class="checkbox mb-2">
+                        <div class="custom-control custom-checkbox">
+                          <input id="chkKeepMe" name="chkKeepMe" type="checkbox" class="custom-control-input">
+                          <label class="custom-control-label" for="chkKeepMe">Remember me</label>
+                        </div>
+                    </div>
+
+                    <!-- reCaptcha place holder-->
+                    <div id="gReCaptcha"></div>
+                </form>
+
+                <div class="">
+                    <button class="btn btn-lg btn-primary btn-block" onclick="saveForm();" id="btnSignIn">Sign in</button>
+
+                    <div class="mt-3 text-center">
+                        <p class="mb-0"><a href="{% url 'password_reset' %}">Forgot your Password?</a><br/>
+                        Don't have an account? <a href="{% url 'register' %}">Sign up</a></p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+{% endblock %}
+
+{% block scripts %}
+<script src="{% static 'assets/js/common/common.js' %}" defer></script>
+<script src="{% static 'sweetalert/sweetalert.js' %}" defer></script>
+
+<script defer>
+
+    var BASE_URL = "{{ BASE_URL }}";
+    var COMMON_ASSETS_URL = "{% static 'assets/images/' %}";
+    var THIS_OBJ = '';
+
+    function isRequiredFieldsPass()
+    {
+        id_username = $("#id_username").val();
+        id_password = $("#id_password").val();
+
+        if (id_username === undefined || id_username === null || id_username ===""){
+            swal("Username is Required!", "Please enter your username", "error");
+            $("#id_username").focus();
+            return false;
+        }
+
+        if (id_password === undefined || id_password === null || id_password ===""){
+            swal("Password is Required!", "Please enter your password", "error");
+            $("#id_password").focus();
+            return false;
+        }
+
+        return true;
+    }
+
+    function saveForm()
+    {
+        //Get the form instance
+        var $form = $("#formLogin");
+        id_username = $("#id_username").val();
+        id_password = $("#id_password").val();
+        chkKeepMe = $('#chkKeepMe').is(':checked');
+
+        if (id_username === undefined || id_username === null || id_username ===""){
+            swal("Username is Required!", "Please enter your username", "error");
+            $("#id_username").focus();
+            return false;
+        }
+
+        if (id_password === undefined || id_password === null || id_password ===""){
+            swal("Password is Required!", "Please enter your password", "error");
+            $("#id_password").focus();
+            return false;
+        }
+
+        $.ajax({
+            method: "POST",
+            url: BASE_URL+'login/',
+            data: $form.serialize() + "&chkKeepMe="+chkKeepMe,
+            cache: false,
+            dataType: "json",
+            beforeSend: function(){
+                //Start displaying button's working animation
+                var loadingText = '<i class="fa fa-circle-o-notch fa-spin"></i> working...';
+                if ($("#btnSignIn").html() !== loadingText) {
+                    $("#btnSignIn").data('original-text', $("#btnSignIn").html());
+                    $("#btnSignIn").html(loadingText);
+                }
+            },
+            success: function(jResults)
+            {
+                // Reload reCaptcha
+                myutils.btnReCaptcha("btnSignIn");
+                grecaptcha.reset();
+
+                $("#btnSignIn").html($("#btnSignIn").data('original-text')); //stop animation and switch back to original text
+
+                if(jResults.alert_type =='success'){
+                    swal(jResults.alert_title, jResults.alert_msg, jResults.alert_type);
+                    window.location.replace(jResults.base_url + jResults.redirect_url);
+                }
+                else {
+                    var strErr = jResults.alert_msg + '';
+                    strErr = strErr.split(",").pop();
+                    swal(jResults.alert_title, strErr, jResults.alert_type);
+                }
+            }
+        });
+    }
+
+    $(document).ready(function()
+    {
+        // Reload reCaptcha
+        myutils.btnReCaptcha("btnSignIn");
+
+    });
+</script>
+{% endblock %}

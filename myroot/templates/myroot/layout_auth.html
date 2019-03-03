@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <title>{{ title|slice:":60" }}</title>
+    <link rel="canonical" href="{{ BASE_URL|slice:":-1" }}{{ request.get_full_path }}">
+    <meta name="viewport" content="width=device-width,minimum-scale=1,initial-scale=1">
+    <meta name="description" content="{{ meta_desc|slice:":160" }}" />
+    {% load static %}
+    <link rel="icon" type="image/jpg" href="{% static 'assets/images/favicon.ico' %}">
+    <link rel="stylesheet" href="{% static 'bootstrap4/css/bootstrap.min.css' %}">
+    <link rel="stylesheet" href="{% static 'fontawesome5/css/fontawesome-all.min.css' %}">
+    <link rel="stylesheet" href="{% static 'assets/css/common.css' %}">
+    <style>
+        :root{--input-padding-x:.75rem;--input-padding-y:.75rem}
+        body{display:-ms-flexbox;display:-webkit-box;display:flex;-ms-flex-align:center;-ms-flex-pack:center;-webkit-box-align:center;align-items:center;-webkit-box-pack:center;justify-content:center}
+
+        /*Lazy load*/
+        img {opacity: 1; transition: opacity 0.5s;}
+        img[data-src] {opacity: 0;}
+    </style>
+    {% block extra_styles_head %}{% endblock %}
+</head>
+
+{% block body_styles %}
+<body class="bg-light">
+
+    <div class="container">
+        {% block content %}{% endblock %}
+        <script src="{% static 'assets/js/common/jquery.min.js' %}"></script>
+        <script src="{% static 'bootstrap4/js/popper.min.js' %}" defer></script>
+        <script src="{% static 'bootstrap4/js/bootstrap.min.js' %}" defer></script>
+        <script src="{% static 'bootstrap4/js/holder.min.js' %}" defer></script>
+
+        <script defer>
+            //lazy load
+            [].slice.apply(document.querySelectorAll('img[data-src].d-image')).forEach(function(img) {
+                img.setAttribute('src', img.getAttribute('data-src'));
+                img.onload = function() {
+                    img.removeAttribute('data-src');
+                };
+            });
+        </script>
+
+        <!-- Global site tag (gtag.js) - Google Analytics -->
+        <script async src="https://www.googletagmanager.com/gtag/js?id=UA-126199598-1"></script>
+        <script>
+          window.dataLayer = window.dataLayer || [];
+          function gtag(){dataLayer.push(arguments);}
+          gtag('js', new Date());
+
+          gtag('config', 'UA-126199598-1');
+        </script>
+        {% block scripts %}{% endblock %}
+
+        {% block footer %}
+            {% include 'myroot/footer_home.html' %}
+        {% endblock %}
+    </div>
+
+    {% block extra_styles_bottom %}{% endblock %}
+</body>
+{% endblock %}
+</html>

@@ -1,0 +1,57 @@
+{% load static %}
+{% load humanize %}
+
+<!-- Main Sidebar Container -->
+<aside class="main-sidebar sidebar-dark-primary elevation-4">
+    <a href="{% url 'dashboard' %}" class="brand-link">
+        <img src="{% static 'assets/images/pinoylearnpython-dashboard-logo.png' %}" alt="{{ SITE_SHORT_NAME }} Logo" class="brand-image img-circle elevation-3" style="opacity: .8">
+        <span class="brand-text font-weight-light">{{ SITE_SHORT_NAME }}</span>
+    </a>
+
+    <!-- Sidebar -->
+    <div class="sidebar">
+        <div class="user-panel mt-3 pb-3 mb-3 d-flex">
+            <div class="image">
+                <img class="img-circle elevation-2" src="{{ DEFAULT_AVATAR }}" alt="User profile avatar">
+            </div>
+            <div class="info">
+                <a href="#" class="d-block" target="_blank">
+                    {% if not CUR_USER_full_name == '' %}
+                        {{ CUR_USER_full_name }}
+                    {% else %}
+                        {{ CUR_USER_name }}
+                    {% endif %}
+                </a>
+                <span class="d-block text-white"><b>Learner</b></span>
+            </div>
+        </div>
+
+        <!-- Sidebar Menu -->
+        <nav class="mt-2">
+            <ul class="nav nav-pills nav-sidebar flex-column" data-widget="treeview" role="menu" data-accordion="false">
+
+                <li class="nav-item">
+                    <a href="{% url 'dashboard' %}" class="nav-link {% if active_sidebar_menu == 'dashboard' %}active{% else %}{% endif %}">
+                        <i class="nav-icon fas fa-tachometer-alt"></i>
+                        <p>Dashboard</p>
+                    </a>
+                </li>
+
+                <li class="nav-item">
+                    <a href="{% url 'change_password' %}" class="nav-link {% if active_sidebar_menu == 'change_password' %}active{% else %}{% endif %}">
+                        <i class="nav-icon fas fa-unlock-alt"></i>
+                        <p>Change Password</p>
+                    </a>
+                </li>
+
+                <li class="nav-item">
+                    <a href="{% url 'logout' %}" class="nav-link">
+                        <i class="nav-icon fas fa-sign-out-alt"></i>
+                        <p>Log out</p>
+                    </a>
+                </li>
+
+            </ul>
+        </nav>
+    </div>
+</aside>

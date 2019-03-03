@@ -1,0 +1,54 @@
+{% extends "myroot/dashboard/layout_dash.html" %}
+{% load static %}
+
+{% block extra_styles_head %}
+<style>
+	canvas {
+		-moz-user-select: none;
+		-webkit-user-select: none;
+		-ms-user-select: none;
+	}
+	</style>
+{% endblock %}
+
+{% block content %}
+    <div class="content-header">
+        <div class="container-fluid">
+
+            <div class="row mb-2">
+                <div class="col-sm-6">
+                    <h1 class="m-0 text-dark">{{ title }}</h1>
+                </div>
+
+                <div class="col-sm-6">
+                    <ol class="breadcrumb float-sm-right">
+                        <li class="breadcrumb-item"><a href="{% url 'dashboard' %}">Home</a></li>
+                        <li class="breadcrumb-item active">{{ title }}</li>
+                    </ol>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="container-fluid">
+
+    </div>
+{% endblock %}
+
+{% block scripts %}
+<script src="{% static 'assets/js/common/common.js' %}" defer></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.10.2/moment.min.js"></script>
+
+<script defer>
+
+    var BASE_URL = "{{ BASE_URL }}";
+    var COMMON_ASSETS_URL = "{% static 'assets/images/' %}";
+    var THIS_OBJ = '';
+
+    $(document).ready(function()
+    {
+
+    });
+
+</script>
+{% endblock %}

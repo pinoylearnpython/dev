@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <title>{{ title|slice:":60" }}</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta http-equiv="x-ua-compatible" content="ie=edge">
+    <meta name="description" content="{{ meta_desc|slice:":160" }}" />
+
+    {% load static %}
+    <link rel="icon" type="image/jpg" href="{% static 'assets/images/favicon.ico' %}">
+    <link rel="stylesheet" href="{% static 'fontawesome5/css/fontawesome-all.min.css' %}">
+    <link rel="stylesheet" href="{% static 'adminlte3/plugins/select2/select2.min.css' %}">
+    <link rel="stylesheet" href="{% static 'adminlte3/dist/css/adminlte.min.css' %}">
+
+    <style>
+        .alert-minimalist
+        {
+            background-color: rgb(241, 242, 240);
+            border-color: rgba(149, 149, 149, 0.3);
+            border-radius: 3px;
+            color: rgb(149, 149, 149);
+            padding: 10px;
+        }
+
+        .alert-minimalist > [data-notify="icon"]
+        {
+            height: 50px;
+            margin-right: 12px;
+        }
+
+        .alert-minimalist > [data-notify="title"]
+        {
+            color: rgb(51, 51, 51);
+            display: block;
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+
+        .alert-minimalist > [data-notify="message"]
+        {
+            font-size: 80%;
+        }
+
+        .grecaptcha-badge{display:none;}
+        th.dt-center, td.dt-center { text-align: center; }
+    </style>
+
+    <link href="https://fonts.googleapis.com/css?family=Source+Sans+Pro:300,400,400i,700" rel="stylesheet">
+    {% block extra_styles_head %}{% endblock %}
+</head>
+
+{% block body_styles %}
+<body class="hold-transition sidebar-mini">
+    <div class="wrapper">
+
+        {% include 'myroot/dashboard/layout_dash_nav.html' %}
+        {% include 'myroot/dashboard/layout_dash_main_sidebar.html' %}
+        {% block page_sub_title %}{% endblock %}
+
+        <div class="content-wrapper">
+            {% block content %}{% endblock %}
+
+            <script src="{% static 'adminlte3/plugins/jquery/jquery.min.js' %}"></script>
+
+            <script defer src="{% static 'adminlte3/plugins/bootstrap/js/bootstrap.bundle.min.js' %}"></script>
+            <script defer src="{% static 'adminlte3/dist/js/adminlte.min.js' %}"></script>
+            <script defer src="{% static 'adminlte3/plugins/slimScroll/jquery.slimscroll.min.js' %}"></script>
+            <script defer src="{% static 'adminlte3/plugins/fastclick/fastclick.js' %}"></script>
+
+            <!-- Global site tag (gtag.js) - Google Analytics -->
+            <script async src="https://www.googletagmanager.com/gtag/js?id=UA-126199598-1"></script>
+            <script>
+              window.dataLayer = window.dataLayer || [];
+              function gtag(){dataLayer.push(arguments);}
+              gtag('js', new Date());
+
+              gtag('config', 'UA-126199598-1');
+            </script>
+            {% block scripts %}{% endblock %}
+
+        </div>
+
+        {% block control_sidebar %}
+            <aside class="control-sidebar control-sidebar-dark">
+                <div class="p-3">
+                    <h5>Title</h5>
+                    <p>Sidebar content</p>
+                </div>
+            </aside>
+        {% endblock %}
+
+        {% block footer %}
+            <footer class="main-footer">
+                <div class="float-right d-none d-sm-inline">
+                    Started {{ SITE_YEAR_STARTED }}
+                </div>
+                <strong>Copyright &copy; {{ SITE_YEAR_STARTED }}-{% now "Y" %} {{ SITE_FULL_NAME }} <a href="{{ SITE_URL_HOME }}">{{ SITE_SHORT_NAME }}</a>.</strong> All rights reserved.
+            </footer>
+        {% endblock %}
+
+        {% block extra_styles_bottom %}{% endblock %}
+    </div>
+</body>
+{% endblock %}
+</html>
