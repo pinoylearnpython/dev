@@ -40,6 +40,7 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
 	'django.contrib.humanize',
+	'django.contrib.sites',
     'channels',
 ]
 
@@ -155,3 +156,48 @@ SITE_CONTACT_US = "https://pinoylearnpython.com/get-in-touch-with-me/"
 
 # Minimum characters for search
 MIN_CHARS_SEARCH = 3
+
+# App Common Information
+APP_EMAIL_FROM = 'support@pinoylearnpython.com'
+APP_URL_TOP_LOGO = BASE_URL + 'static/assets/images/PinoyLearnPython-PLP.png'
+APP_USER_AUTH_RE_ACCESS_LOGIN_PAGE = 'helloworld'
+
+# Default Avatar
+DEFAULT_AVATAR = STATIC_URL + 'assets/images/avatar.png'
+
+# Google reCAPTCHA v3 api keys
+GRECAP_SITE_KEY = '6Lfk1ZAUAAAAAAqn3hiZ41ROoZ3xvJNKJFDuV-rH'
+
+path_sk = '/root/dev/config/GRECAP_SECRET_KEY.txt'
+read_sk = open(path_sk, "r")
+GRECAP_SECRET_KEY = read_sk.read()
+read_sk.close()
+
+GRECAP_VERIFY_URL = 'https://www.google.com/recaptcha/api/siteverify'
+
+# MY OWN PASSWORD SETTINGS:
+MIN_PASS_LENGTH = 8
+PASSWORD_RESET_TIMEOUT_DAYS = 1
+
+# User Login Options
+LOGIN_URL = 'login'
+LOGOUT_URL = 'logout'
+LOGIN_REDIRECT_URL = 'dashboard'
+
+# SMTP Server Settings
+path_email = '/root/dev/config/email_pass.txt'
+fem = open(path_email, "r")
+EMAIL_HOST_PASSWORD = fem.read()
+fem.close()
+
+EMAIL_HOST = 'smtp.dreamhost.com'
+EMAIL_PORT = 465
+EMAIL_HOST_USER = 'notify@xn--webppapps-z79d.com'
+DEFAULT_FROM_EMAIL = 'support@pinoylearnpython.com'
+EMAIL_USE_SSL = True
+
+# SMTP for Production
+EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
+
+# Enable the defaut site framework
+SITE_ID = 1

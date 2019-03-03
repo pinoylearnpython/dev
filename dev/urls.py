@@ -18,6 +18,7 @@ from django.urls import path
 
 # Call myroot properties
 import myroot.views.vmain
+import myroot.views.vdashboard
 
 
 urlpatterns = [
@@ -55,4 +56,39 @@ urlpatterns = [
 
     path('emptysearch/', myroot.views.vmain.emptysearch_view,
          name='emptysearch'),
+
+    # Django Auth System related links
+    path('login/', myroot.views.vmain.login_view, name='login'),
+    path('logout/', myroot.views.vmain.logout_view, name='logout'),
+    path('register/', myroot.views.vmain.register_view, name='register'),
+
+    path('account_activation_sent/', myroot.views.vmain.account_activation_sent,
+         name='account_activation_sent'),
+
+    path('activate/(?P<uidb64>[0-9A-Za-z_\-]+)/(?P<token>[0-9A-Za-z]{1,13}-[0-9A-Za-z]{1,20})/$',
+         myroot.views.vmain.activate,
+         name='activate'),
+
+    path('password_reset/', myroot.views.vmain.password_reset_view,
+         name='password_reset'),
+
+    path('reset/(?P<uidb64>[0-9A-Za-z_\-]+)/(?P<token>[0-9A-Za-z]{1,13}-[0-9A-Za-z]{1,20})/$',
+         myroot.views.vmain.password_reset_confirm_view,
+         name='password_reset_confirm'),
+
+    path('reset_password_now/',
+         myroot.views.vmain.reset_password_now_view,
+         name='reset_password_now'),
+
+    path('password_reset_done/', myroot.views.vmain.password_reset_done_view,
+         name='password_reset_done'),
+
+    path('reset/done/', myroot.views.vmain.password_reset_complete_view,
+         name='password_reset_complete'),
+
+    # Dashboard related urls
+    path('dashboard/', myroot.views.vdashboard.dashboard_view, name='dashboard'),
+
+    path('change_password/', myroot.views.vdashboard.change_password_view,
+         name='change_password'),
 ]
