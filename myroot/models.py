@@ -17,3 +17,27 @@ class ContactUs(models.Model):
         db_table = 'dev_contact_us'
         verbose_name = 'Contact Us'
         verbose_name_plural = 'Contact Us'
+
+
+class SiteConfig(models.Model):
+    property_name = models.CharField(max_length=75, unique=True)
+    property_value = models.CharField(max_length=254, null=True, blank=True)
+    property_desc = models.CharField(max_length=255, null=True, blank=True)
+
+    SC_Default = 'APPSETTING'
+    SC_Option = (
+        ('APP_CONF', 'App Setting'),
+        ('GENERAL_CONF', 'General Setting'),
+        ('PROHIBITED_USER_NAME', 'Prohibited User Name'),
+        ('PROHIBITED_USER_EMAIL', 'Prohibited User Email'),
+        ('OTHERS', 'Other'),
+    )
+
+    property_group = models.CharField(max_length=75, choices=SC_Option,
+                                      default=SC_Default)
+
+    class Meta:
+        index_together = ["property_group"]
+        db_table = 'dev_site_config'
+        verbose_name = 'Site Config'
+        verbose_name_plural = 'Site Configs'
