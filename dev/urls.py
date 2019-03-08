@@ -15,11 +15,19 @@ Including another URLconf
 """
 from django.contrib import admin
 from django.urls import path
+from django.contrib.sitemaps.views import sitemap
 
 # Call myroot properties
 import myroot.views.vmain
 import myroot.views.vdashboard
 
+# Call SiteMap properties
+from myroot.views.sitemap import (ContactUsSitemap, StaticViewSitemap)
+
+sitemaps = {
+    'contacts': ContactUsSitemap,
+    'static': StaticViewSitemap,
+}
 
 urlpatterns = [
     path('admin/', admin.site.urls),
@@ -91,4 +99,8 @@ urlpatterns = [
 
     path('change_password/', myroot.views.vdashboard.change_password_view,
          name='change_password'),
+
+    # Django auto generate sitemap.xml file
+    path('sitemap.xml', sitemap, {'sitemaps': sitemaps},
+         name='django.contrib.sitemaps.views.sitemap'),
 ]
