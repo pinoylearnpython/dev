@@ -79,3 +79,20 @@ def is_password_valid(new_password1, new_password2):
         is_pass_valid = True
 
     return is_pass_valid, msg, title
+
+
+def is_username_valid(username):
+    """
+    To check if the username is valid or not.
+    """
+    is_user_name_valid = False
+    msg, title = '', ''
+
+    if not re.findall(r'^[\w.@+-]+\Z', username):
+        # Display error message, only allow special characters @, ., +, -, and _.
+        msg = "Enter a valid username. This value may contain only alphanumeric values and @/./+/-/_ characters."
+        title = 'Invalid Username'
+    else:
+        is_user_name_valid = True
+
+    return is_user_name_valid, msg, title

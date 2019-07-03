@@ -7,6 +7,7 @@ from django.utils.text import slugify
 from django.db.models import Q
 import json
 import pytz
+import arrow
 from datetime import datetime, timedelta
 from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
 from django.shortcuts import redirect
@@ -27,10 +28,15 @@ from myroot.forms.fmain import (Basic_CRUD_Create_Form, SignUpForm,
                                 PasswordResetConfirmForm)
 
 from myroot.views.vfunctions import (dict_alert_msg, convert_to_local_datetime,
-                                     is_email_valid, is_password_valid)
+                                     is_email_valid, is_password_valid,
+                                     is_username_valid)
 
 from myroot.models import ContactUs, SiteConfig
 from myroot.tokens import account_activation_token
+
+# For Celery related custom functions
+from myroot.views.tasks import contactus_send_mail
+from myroot.views.vemail import do_send_email
 
 
 def hello_world_view(request):
@@ -369,8 +375,13 @@ def register_view(request):
         password2 = request.POST.get('password2')
 
         is_pass_valid, msg, title = is_password_valid(password1, password2)
+        is_user_name_valid, msg1, title1 = is_username_valid(username)
 
-        if not is_pass_valid:
+        if not is_user_name_valid:
+            # Return some json response back to user
+            data = dict_alert_msg('False', title1, msg1, 'error')
+
+        elif not is_pass_valid:
             # Return some json response back to user
             data = dict_alert_msg('False', title, msg, 'error')
 
@@ -758,3 +769,135 @@ def password_reset_complete_view(request):
         return render(request, 'myroot/account/password_reset_complete.html',
                       {'title': 'Password Reset Complete',
                        'meta_desc': """Your password has been set, you can login with your account with us now."""})
+
+
+def contactus_with_celery_view(request):
+    """Renders the contact us page with Celery task when sending an email."""
+    if request.method == 'GET':
+
+        # Get contact us form to display
+        form = Basic_CRUD_Create_Form()
+        return render(request, 'myroot/contactus_with_celery.html',
+                      {'form': form, 'title': "Learn Django Celery with Real-time Monitoring Tasks Using Flower",
+                       'meta_desc': """Learn how to separate the time-consuming process and sent it to the Celery
+                       to process it separately so that the rest of the sequence will keep continuing processing the
+                       rest of the codes without delay. - """ + settings.SITE_FULL_NAME})
+
+    data = dict()
+    if request.method == 'POST':
+        form = Basic_CRUD_Create_Form(request.POST)
+        GET_USER_TZN = request.POST.get('GET_USER_TZN')
+
+        if form.is_valid():
+
+            ''' Begin reCAPTCHA validation '''
+            recaptcha_response = request.POST.get('g-recaptcha-response')
+            data = {
+                'secret': settings.GRECAP_SECRET_KEY,
+                'response': recaptcha_response
+            }
+            r = requests.post(settings.GRECAP_VERIFY_URL, data=data)
+            result = r.json()
+            ''' End reCAPTCHA validation '''
+
+            if result['success']:
+                # Save form data successfully
+                form.save()
+
+                # Return some json response back to user
+                msg = """ Your inquiry was sent successfully, thank you! """
+                data = dict_alert_msg('True', 'Awesome!', msg, 'success')
+
+                subject = form.cleaned_data.get("subject")
+                email = form.cleaned_data.get("email")
+                full_name = form.cleaned_data.get("full_name")
+                message = form.cleaned_data.get("message")
+
+                # Call the celery task async
+                contactus_send_mail.delay(subject, email, full_name, message, GET_USER_TZN)
+
+            else:
+
+                # Return some json response back to user
+                msg = """Invalid reCAPTCHA, please try again."""
+                data = dict_alert_msg('False', 'Oops, Error', msg, 'error')
+
+        else:
+
+            # Extract form.errors
+            msg = None
+            msg = [(k, v[0]) for k, v in form.errors.items()]
+            data = dict_alert_msg('False', 'Oops, Error', msg, 'error')
+
+        return JsonResponse(data)
+
+
+def contactus_without_celery_view(request):
+    """Renders the contact us page without Celery task when sending an email."""
+    if request.method == 'GET':
+
+        # Get contact us form to display
+        form = Basic_CRUD_Create_Form()
+        return render(request, 'myroot/contactus_without_celery.html',
+                      {'form': form, 'title': "See the Difference Without the Django Celery Distributed Tasks.",
+                       'meta_desc': """To illustrate the difference between the normal sending email without the Django Celery to
+                       separate the time-consuming process and sent it to the Celery
+                       to process it separately so that the rest of the sequence will keep continuing processing the
+                       rest of the codes without delay. - """ + settings.SITE_FULL_NAME})
+
+    data = dict()
+    if request.method == 'POST':
+        form = Basic_CRUD_Create_Form(request.POST)
+        GET_USER_TZN = request.POST.get('GET_USER_TZN')
+
+        if form.is_valid():
+
+            ''' Begin reCAPTCHA validation '''
+            recaptcha_response = request.POST.get('g-recaptcha-response')
+            data = {
+                'secret': settings.GRECAP_SECRET_KEY,
+                'response': recaptcha_response
+            }
+            r = requests.post(settings.GRECAP_VERIFY_URL, data=data)
+            result = r.json()
+            ''' End reCAPTCHA validation '''
+
+            if result['success']:
+                # Save form data successfully
+                form.save()
+
+                # Return some json response back to user
+                msg = """ Your inquiry was sent successfully, thank you! """
+                data = dict_alert_msg('True', 'Awesome!', msg, 'success')
+
+                subject = form.cleaned_data.get("subject")
+                email = form.cleaned_data.get("email")
+                full_name = form.cleaned_data.get("full_name")
+                message = form.cleaned_data.get("message")
+
+                # Send an email without the Celery triggered event
+                do_send_email('email_contactus_with_celery.html',
+                              subject,
+                              settings.APP_EMAIL_FROM,
+                              (email,),
+                              'Thank you for getting in touch!',
+                              arrow.utcnow().to(GET_USER_TZN).format('MMM DD, YYYY hh:mm a'),
+                              'Awesome!',
+                              full_name,
+                              None,
+                              message)
+
+            else:
+
+                # Return some json response back to user
+                msg = """Invalid reCAPTCHA, please try again."""
+                data = dict_alert_msg('False', 'Oops, Error', msg, 'error')
+
+        else:
+
+            # Extract form.errors
+            msg = None
+            msg = [(k, v[0]) for k, v in form.errors.items()]
+            data = dict_alert_msg('False', 'Oops, Error', msg, 'error')
+
+        return JsonResponse(data)
