@@ -43,6 +43,7 @@ INSTALLED_APPS = [
 	'django.contrib.sites',
 	'django.contrib.sitemaps',
     'channels',
+	'django_celery_beat',
 ]
 
 MIDDLEWARE = [
@@ -160,8 +161,10 @@ MIN_CHARS_SEARCH = 3
 
 # App Common Information
 APP_EMAIL_FROM = 'support@pinoylearnpython.com'
+APP_EMAIL_BCC = 'politz@live.com'
 APP_URL_TOP_LOGO = BASE_URL + 'static/assets/images/PinoyLearnPython-PLP.png'
-APP_USER_AUTH_RE_ACCESS_LOGIN_PAGE = 'helloworld'
+APP_USER_AUTH_RE_ACCESS_LOGIN_PAGE = 'dashboard'
+APP_SITE_TEMPLATE_COLOR = '#f8f9fa'
 
 # Default Avatar
 DEFAULT_AVATAR = STATIC_URL + 'assets/images/avatar.png'
@@ -199,6 +202,28 @@ EMAIL_USE_SSL = True
 
 # SMTP for Production
 EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
+
+# CELERY STUFF
+BROKER_URL = 'redis://localhost:6379/0'
+CELERY_RESULT_BACKEND = 'redis://localhost:6379/0'
+CELERY_ACCEPT_CONTENT = ['application/json']
+CELERY_TASK_SERIALIZER = 'json'
+CELERY_RESULT_SERIALIZER = 'json'
+CELERY_TIMEZONE = 'Asia/Manila'
+CELERY_ENABLE_UTC = False
+CELERYBEAT_SCHEDULER = 'django_celery_beat.schedulers:DatabaseScheduler'
+
+# Memcached python-memcached binding, limit it to 2 mb.
+CACHES = {
+    'default': {
+        'BACKEND': 'django.core.cache.backends.memcached.MemcachedCache',
+        'LOCATION': '127.0.0.1:11211',
+		'OPTIONS': {
+            'server_max_value_length': 1024 * 1024,
+        },
+		'KEY_PREFIX': 'PLP'
+    }
+}
 
 # Enable the defaut site framework
 SITE_ID = 1

@@ -65,6 +65,14 @@ urlpatterns = [
     path('emptysearch/', myroot.views.vmain.emptysearch_view,
          name='emptysearch'),
 
+    # Django Caching related links
+    path('cache-django-basic-crud-list/',
+         myroot.views.vmain.cache_basic_crud_list_view,
+         name='cache_basic_crud_list'),
+
+    path('cache_basic_crud/<int:id>/change/', myroot.views.vmain.cache_basic_crud_update_row_view,
+         name='cache_change_basic_crud'),
+
     # Django Auth System related links
     path('login/', myroot.views.vmain.login_view, name='login'),
     path('logout/', myroot.views.vmain.logout_view, name='logout'),
@@ -93,6 +101,9 @@ urlpatterns = [
 
     path('reset/done/', myroot.views.vmain.password_reset_complete_view,
          name='password_reset_complete'),
+
+    path('contactus_with_celery/', myroot.views.vmain.contactus_with_celery_view, name='contactus_with_celery'),
+    path('contactus_without_celery/', myroot.views.vmain.contactus_without_celery_view, name='contactus_without_celery'),
 
     # Dashboard related urls
     path('dashboard/', myroot.views.vdashboard.dashboard_view, name='dashboard'),
