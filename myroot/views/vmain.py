@@ -38,6 +38,9 @@ from myroot.tokens import account_activation_token
 from myroot.views.tasks import contactus_send_mail
 from myroot.views.vemail import do_send_email
 
+# All the common functions to be loaded here.
+from myroot.common import (get_contact_us_list, is_contact_us_id_exist)
+
 
 def hello_world_view(request):
     """Renders the Hello World page."""
@@ -898,6 +901,89 @@ def contactus_without_celery_view(request):
             # Extract form.errors
             msg = None
             msg = [(k, v[0]) for k, v in form.errors.items()]
+            data = dict_alert_msg('False', 'Oops, Error', msg, 'error')
+
+        return JsonResponse(data)
+
+
+def cache_basic_crud_list_view(request):
+    """
+    This is how we cache an expensive Django queries to avoid
+    keep hitting your database server with the same results.
+    """
+    if request.method == "GET":
+
+        # Call a cachable function.
+        db_data = get_contact_us_list()
+
+        return render(request, 'myroot/cache_basic_crud_list.html',
+                      {
+                          'title': 'Django Memcached Basic CRUD: Manage Table Rows using DataTables',
+                          'meta_desc': 'Learn how to use the Django Memcached to display the database table rows using DataTables.',
+                          'db_data': db_data
+                       })
+
+
+def cache_basic_crud_update_row_view(request, id):
+    """
+    Renders the Django edit form page and execute the update statement.
+    But, with invalidating the cache to clear the previous cached results.
+    """
+    if request.method == "GET":
+
+        # Check if the row id existed or not.
+        if is_contact_us_id_exist(id):
+
+            # Edit the form data.
+            edit_data = ContactUs.objects.get(id=id, is_deleted=False)
+            formEdit = Basic_CRUD_Create_Form(instance=edit_data)
+
+            return render(request, 'myroot/cache_basic_crud_update.html',
+                          {
+                              'title': "Django Memcached Basic CRUD Update Statement",
+                              'meta_desc': "This is the actual example for Django Memcached using the django-cache-memoize invalidation, basic crud which is the update statement.",
+                              'id': id,
+                              'formEdit': formEdit
+                           })
+        else:
+            raise Http404()
+
+    data = dict()
+    if request.method == "POST":
+
+        # Get the  form modified data
+        form_edit = Basic_CRUD_Create_Form(request.POST)
+        id = request.POST.get('id')
+
+        if form_edit.is_valid():
+
+            # Check if the row still not deleted, get it from the cache memory
+            if is_contact_us_id_exist(id):
+
+                # Get the form edit instance
+                update_data = ContactUs.objects.get(id=id, is_deleted=False)
+
+                # Now, supply the form data to an instance
+                form_edit = Basic_CRUD_Create_Form(request.POST, instance=update_data)
+                form_edit.save()  # Finally save the form data
+
+                # Here, to invalidate the previous cache results.
+                get_contact_us_list.invalidate()
+                is_contact_us_id_exist.invalidate(id)
+
+                # Return some json response back to the user
+                msg = """ Your data has been modified successfully, thank you! """
+                data = dict_alert_msg('True', 'Awesome!', msg, 'success')
+
+            else:
+                # Return some json response back to the user
+                msg = """ The data has no longer existed, the update has been aborted! """
+                data = dict_alert_msg('True', 'Update Failed!', msg, 'error')
+        else:
+
+            # Extract form.errors
+            msg = None
+            msg = [(k, v[0]) for k, v in form_edit.errors.items()]
             data = dict_alert_msg('False', 'Oops, Error', msg, 'error')
 
         return JsonResponse(data)
