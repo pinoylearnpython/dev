@@ -11,6 +11,7 @@ https://docs.djangoproject.com/en/2.1/ref/settings/
 """
 
 import os
+import arrow
 
 # Build paths inside the project like this: os.path.join(BASE_DIR, ...)
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -223,6 +224,32 @@ CACHES = {
         },
 		'KEY_PREFIX': 'PLP'
     }
+}
+
+# Django logs and my custom application logs
+LOG_FILE_NAME = arrow.now().format('MMM-DD-YYYY') + ".log"
+LOGGING = {
+    'version': 1,
+    'disable_existing_loggers': False,
+    'handlers': {
+        'file': {
+            'level': 'DEBUG',
+            'class': 'logging.FileHandler',
+            'filename': '/root/dev/logs/logs_' + LOG_FILE_NAME,
+        },
+    },
+    'loggers': {
+        'django': {
+            'handlers': ['file'],
+            'level': 'DEBUG',
+            'propagate': True,
+        },
+    },
+    'django.template': {
+        'handlers': ['file'],
+        'level': 'INFO',
+        'propagate': True,
+    },
 }
 
 # Enable the defaut site framework
