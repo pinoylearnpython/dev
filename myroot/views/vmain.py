@@ -11,6 +11,7 @@ import arrow
 from datetime import datetime, timedelta
 from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
 from django.shortcuts import redirect
+from django.utils.encoding import smart_text
 
 # Django Auth System
 from django.contrib.auth.models import User
@@ -69,7 +70,12 @@ def basic_crud_create_view(request):
         form = Basic_CRUD_Create_Form(request.POST)
 
         if form.is_valid():
-            form.save()  # insert new row
+
+            # Create the new row
+            m = form.save(commit=False)
+            m.message = smart_text(form.cleaned_data['message'])
+            m.save()  # Finally save the form data
+            m.pk  # get the latest inserted id
 
             # Return some json response back to the user
             msg = """ Your data has been inserted successfully, thank you! """
@@ -186,7 +192,9 @@ def basic_crud_update_row_view(request, id):
 
                 # Now, supply the form data to an instance
                 form_edit = Basic_CRUD_Create_Form(request.POST, instance=update_data)
-                form_edit.save()  # Finally save the form data
+                m = form_edit.save(commit=False)
+                m.message = smart_text(form_edit.cleaned_data['message'])
+                m.save()  # Finally save the form data
 
                 # Return some json response back to the user
                 msg = """ Your data has been modified successfully, thank you! """
@@ -965,7 +973,9 @@ def cache_basic_crud_update_row_view(request, id):
 
                 # Now, supply the form data to an instance
                 form_edit = Basic_CRUD_Create_Form(request.POST, instance=update_data)
-                form_edit.save()  # Finally save the form data
+                m = form_edit.save(commit=False)
+                m.message = smart_text(form_edit.cleaned_data['message'])
+                m.save()  # Finally save the form data
 
                 # Here, to invalidate the previous cache results.
                 get_contact_us_list.invalidate()
