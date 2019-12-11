@@ -2,6 +2,7 @@
 {% load static %}
 {% load humanize %}
 {% load tz %}
+{% load myroot_extras %}
 
 {% block extra_styles_head %}
 <link rel="stylesheet" href="{% static 'adminlte3/plugins/daterangepicker/daterangepicker-bs3.css' %}">
@@ -99,7 +100,8 @@
                                 {% if db_data %}
                                     {% for d in db_data %}
                                         <tr id="tr{{ d.id }}">
-                                            <td>{{ d.full_name }}</td>
+                                            {% split_me d.full_name as splited_full_name %}
+                                            <td>{{ d.full_name }} - {{ splited_full_name }}</td>
                                             <td class="must_hide">{{ d.subject|truncatechars:100 }}</td>
                                             <td>{{ d.email }}</td>
                                             <td class="must_hide">{{ d.submitted|localtime|timesince }}</td>
@@ -219,8 +221,7 @@
         THIS_OBJ = pThis;
         var csrfmiddlewaretoken = Cookies.get('csrftoken');
         var row_id = $(THIS_OBJ).attr("row-id");
-        console.log("csrfmiddlewaretoken: " + csrfmiddlewaretoken);
-
+        
         //confirm user action
         swal({
             title: "Are you sure?",
